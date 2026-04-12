@@ -1,5 +1,7 @@
 import { useAuth } from './hooks/useAuth';
 import Login from './pages/Login';
+import Dashboard from './pages/Dashboard';
+import BottomNav from './components/BottomNav';
 import './App.css';
 
 function App() {
@@ -20,25 +22,12 @@ function App() {
     return <Login />;
   }
 
-  // User is logged in - show placeholder dashboard
+  // User is logged in - show dashboard
   return (
-    <div className="app">
-      <div className="dashboard-placeholder">
-        <img src="/icons/icon-192.png" alt="Rotation Tracker" className="dashboard-logo" />
-        <h1>Welcome to Rotation Tracker!</h1>
-        <p>Logged in as: {user.email}</p>
-        <p>Dashboard coming soon...</p>
-        <button
-          onClick={async () => {
-            const { supabase } = await import('./lib/supabase');
-            await supabase.auth.signOut();
-          }}
-          className="logout-btn"
-        >
-          Logout
-        </button>
-      </div>
-    </div>
+    <>
+      <Dashboard user={user} />
+      <BottomNav active="positions" />
+    </>
   );
 }
 

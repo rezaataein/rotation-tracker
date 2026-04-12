@@ -24,7 +24,7 @@ Copy this into Supabase SQL Editor and run:
 
 CREATE TABLE positions (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  user_id UUID REFERENCES auth.users NOT NULL,
+  user_id UUID REFERENCES auth.users ON DELETE CASCADE NOT NULL,
   strategy_id UUID REFERENCES strategies,  -- Links to strategy that generated this
   
   -- Position metadata
@@ -100,7 +100,7 @@ CREATE TRIGGER update_positions_updated_at
 
 CREATE TABLE strategies (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  user_id UUID REFERENCES auth.users NOT NULL,
+  user_id UUID REFERENCES auth.users ON DELETE CASCADE NOT NULL,
   
   -- Strategy metadata
   name TEXT NOT NULL,  -- e.g., "NVDA vs VGT 45d/12%"
@@ -148,7 +148,7 @@ CREATE TRIGGER update_strategies_updated_at
 
 CREATE TABLE push_subscriptions (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  user_id UUID REFERENCES auth.users NOT NULL,
+  user_id UUID REFERENCES auth.users ON DELETE CASCADE NOT NULL,
   
   -- Web Push subscription data
   endpoint TEXT NOT NULL,
@@ -173,7 +173,7 @@ CREATE INDEX idx_push_subscriptions_user_id ON push_subscriptions(user_id);
 
 CREATE TABLE notifications (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  user_id UUID REFERENCES auth.users NOT NULL,
+  user_id UUID REFERENCES auth.users ON DELETE CASCADE NOT NULL,
   
   -- Notification content
   type TEXT NOT NULL CHECK (type IN ('BUY', 'SELL', 'OPTION_ALERT', 'INFO')),
@@ -424,6 +424,16 @@ ORDER BY s.last_checked_at DESC;
 - Users can only SELECT/INSERT/UPDATE/DELETE their own rows
 - `user_id` is auto-filled from `auth.uid()`
 - Admin can bypass RLS using service_role key or dashboard
+
+**Cascade Deletion:**
+- All foreign keys have `ON DELETE CASCADE`
+- When a user is deleted, all their data is automatically removed:
+  - All positions deleted
+  - All strategies deleted
+  - All push subscriptions deleted
+  - All notifications deleted
+- This ensures no orphaned data and GDPR compliance
+- Deletion from Supabase Dashboard → Authentication → Users works seamlessly
 
 **Password Security:**
 - Passwords never stored in plain text

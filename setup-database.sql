@@ -2,6 +2,11 @@
 -- ROTATION TRACKER - DATABASE SCHEMA
 -- ============================================================================
 -- Run this in Supabase SQL Editor to create all tables and policies
+--
+-- IMPORTANT: All foreign keys use ON DELETE CASCADE
+-- This means when a user is deleted, all their data (positions, strategies,
+-- subscriptions, notifications) is automatically deleted too.
+-- This prevents orphaned data and ensures GDPR compliance.
 -- ============================================================================
 
 -- ============================================================================
@@ -23,7 +28,7 @@ $$ language 'plpgsql';
 
 CREATE TABLE strategies (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  user_id UUID REFERENCES auth.users NOT NULL,
+  user_id UUID REFERENCES auth.users ON DELETE CASCADE NOT NULL,
 
   -- Strategy metadata
   name TEXT NOT NULL,
@@ -71,7 +76,7 @@ CREATE TRIGGER update_strategies_updated_at
 
 CREATE TABLE positions (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  user_id UUID REFERENCES auth.users NOT NULL,
+  user_id UUID REFERENCES auth.users ON DELETE CASCADE NOT NULL,
   strategy_id UUID REFERENCES strategies,
 
   -- Position metadata
@@ -139,7 +144,7 @@ CREATE TRIGGER update_positions_updated_at
 
 CREATE TABLE push_subscriptions (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  user_id UUID REFERENCES auth.users NOT NULL,
+  user_id UUID REFERENCES auth.users ON DELETE CASCADE NOT NULL,
 
   -- Web Push subscription data
   endpoint TEXT NOT NULL,
@@ -164,7 +169,7 @@ CREATE INDEX idx_push_subscriptions_user_id ON push_subscriptions(user_id);
 
 CREATE TABLE notifications (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  user_id UUID REFERENCES auth.users NOT NULL,
+  user_id UUID REFERENCES auth.users ON DELETE CASCADE NOT NULL,
 
   -- Notification content
   type TEXT NOT NULL CHECK (type IN ('BUY', 'SELL', 'OPTION_ALERT', 'INFO')),
