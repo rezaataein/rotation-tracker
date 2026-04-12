@@ -427,26 +427,30 @@ const ChartComponent = lazy(() => import('./components/Chart'));
 
 **Service Worker Caching:**
 ```javascript
-// Cache static assets
-workbox.precaching.precacheAndRoute([
-  { url: '/index.html', revision: 'v1' },
-  { url: '/bundle.js', revision: 'v1' },
-  { url: '/styles.css', revision: 'v1' }
-]);
+// vite-plugin-pwa auto-generates service worker with precaching
+// Configure in vite.config.js:
 
-// Cache API responses (positions, strategies)
-workbox.routing.registerRoute(
-  /^https:\/\/.*\.supabase\.co\/rest\/.*/,
-  new workbox.strategies.NetworkFirst({
-    cacheName: 'api-cache',
-    plugins: [
-      new workbox.expiration.ExpirationPlugin({
-        maxEntries: 50,
-        maxAgeSeconds: 300 // 5 minutes
-      })
+import { VitePWA } from 'vite-plugin-pwa';
+
+VitePWA({
+  registerType: 'autoUpdate',
+  workbox: {
+    globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
+    runtimeCaching: [
+      {
+        urlPattern: /^https:\/\/.*\.supabase\.co\/rest\/.*/,
+        handler: 'NetworkFirst',
+        options: {
+          cacheName: 'api-cache',
+          expiration: {
+            maxEntries: 50,
+            maxAgeSeconds: 300 // 5 minutes
+          }
+        }
+      }
     ]
-  })
-);
+  }
+});
 ```
 
 **Chart Data Caching:**
@@ -520,13 +524,13 @@ async function getStockPrice(ticker) {
 Developer commits to main branch
   ↓
 GitHub Actions: Build & Deploy
-  ├─ Install dependencies
+  ├─ Install dependencies (npm install)
   ├─ Run tests (future)
-  ├─ Build React app (npm run build)
+  ├─ Build Vite app (npm run build → outputs to dist/)
   ├─ Deploy to GitHub Pages (gh-pages branch)
   └─ ~2 minutes total
   ↓
-GitHub Pages serves static files
+GitHub Pages serves static files from dist/
   ↓
 Users access https://username.github.io/rotation-tracker
   ↓

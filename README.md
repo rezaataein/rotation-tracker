@@ -17,7 +17,7 @@ Multi-user trading position tracker with automated signal monitoring and push no
 - 👥 Multi-user with secure data isolation
 
 **Tech Stack:**
-- Frontend: React PWA + TradingView Lightweight Charts
+- Frontend: React + Vite + PWA + TradingView Lightweight Charts
 - Backend: Supabase (PostgreSQL + Auth + Real-time)
 - Cron: GitHub Actions (scheduled checks 3-4x daily)
 - Notifications: Web Push API
@@ -78,7 +78,7 @@ App checks 3x daily (9am, 12pm, 3pm ET):
            │
            ▼
 ┌─────────────────────────────┐
-│   PWA (React)               │
+│   PWA (React + Vite)        │
 │   - Position cards w/charts │
 │   - Strategy scanner        │
 │   - Push notifications      │
@@ -130,21 +130,30 @@ App checks 3x daily (9am, 12pm, 3pm ET):
 
 ---
 
-## 📱 **User Experience**
+## 🚀 **Getting Started**
 
-### **Mobile UI Pattern:**
-- Bottom tab navigation (Scanner | Positions | Options | Alerts)
-- Card-based position list
-- Swipe actions (edit/delete)
-- Floating Action Button (+ to add position)
-- Status indicators (🔴 underperforming | 🟢 ready to exit)
+See `.dev/IMPLEMENTATION.md` for detailed step-by-step build instructions.
 
-### **Charts:**
-- TradingView Lightweight Charts (35KB)
-- Rendered on-demand in frontend
-- Historical data fetched from Yahoo Finance when card opens
-- Shows relative performance over time
-- Entry point + exit threshold markers
+**Quick Start:**
+```bash
+# Install dependencies
+npm install
+
+# Start dev server
+npm run dev
+
+# Build for production
+npm run build
+```
+
+---
+
+## 📚 **Documentation**
+
+- `README.md` - This file (overview)
+- `.dev/IMPLEMENTATION.md` - Step-by-step build guide (local only)
+- `ARCHITECTURE.md` - Technical decisions & details
+- `DATABASE_SCHEMA.md` - Complete database structure
 
 ---
 
@@ -163,39 +172,6 @@ App checks 3x daily (9am, 12pm, 3pm ET):
 - Can only access their own positions (enforced by RLS)
 - Cannot see other users' data
 - Cannot access database directly
-
----
-
-## 🚀 **Implementation Plan**
-
-See `IMPLEMENTATION.md` for detailed step-by-step guide.
-
-**Phase 1: MVP**
-1. Setup Supabase project
-2. Create database schema
-3. Setup GitHub Actions
-4. Build React PWA shell
-5. Implement position tracking
-6. Add strategy scanner
-7. Setup push notifications
-8. Deploy to GitHub Pages
-
-**Phase 2: Polish**
-- TradingView charts
-- Performance analytics
-- Historical trade log
-- Export data to CSV
-
----
-
-## 📚 **Documentation**
-
-- `README.md` - This file (overview)
-- `IMPLEMENTATION.md` - Step-by-step build guide
-- `ARCHITECTURE.md` - Technical decisions & details
-- `DATABASE_SCHEMA.md` - Complete database structure
-- `API_REFERENCE.md` - Supabase queries & cron logic
-- `UX_MOCKUPS.md` - Screen designs & user flows
 
 ---
 
@@ -221,43 +197,11 @@ See `IMPLEMENTATION.md` for detailed step-by-step guide.
 - ✅ No infrastructure to manage
 - ✅ Can migrate to dedicated backend later if needed
 
-**Why no historical data storage?**
-- ✅ Minimal database size
-- ✅ Always fresh data from Yahoo Finance
-- ✅ Flexible chart timeframes
-- ✅ No data staleness issues
-- ✅ Charts calculated on-demand in frontend
-
-**Options pricing: Why use bid for wide spreads?**
-- Conservative (actual sell price)
-- Prevents false alerts on illiquid options
-- 10% spread = wide (use bid)
-- 5-10% spread = moderate (use mid, warn)
-- <5% spread = tight (use mid)
-
----
-
-## 🔄 **From Existing Project**
-
-This app uses concepts from `schg_rotation` and `covered_calls` but:
-- ❌ No Telegram (replaced with push notifications)
-- ❌ No Python (cron in JavaScript/TypeScript)
-- ❌ No hardcoded Mag 7 (user chooses any tickers)
-- ❌ No GCP VM needed (GitHub Actions)
-- ✅ Multi-user ready
-- ✅ Mobile-first UI
-- ✅ Cloud database
-- ✅ Completely free
-
----
-
-## 📞 **Support**
-
-For questions or issues:
-1. Check `IMPLEMENTATION.md` for setup steps
-2. Check `ARCHITECTURE.md` for technical details
-3. Check Supabase dashboard for data issues
-4. Check GitHub Actions logs for cron issues
+**Why Vite instead of create-react-app?**
+- ✅ 10x faster dev server
+- ✅ Smaller production bundles
+- ✅ Modern tooling (CRA is deprecated)
+- ✅ Better developer experience
 
 ---
 
