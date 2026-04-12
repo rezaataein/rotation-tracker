@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
+import AddPosition from '../components/AddPosition';
 import './Dashboard.css';
 
 export default function Dashboard({ user }) {
   const [positions, setPositions] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [showAddModal, setShowAddModal] = useState(false);
 
   useEffect(() => {
     fetchPositions();
@@ -25,6 +27,10 @@ export default function Dashboard({ user }) {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleSavePosition = (newPosition) => {
+    setPositions([newPosition, ...positions]);
   };
 
   if (loading) {
@@ -48,7 +54,9 @@ export default function Dashboard({ user }) {
           <img src="/icons/icon-192.png" alt="" className="empty-icon" />
           <h2>No Positions Yet</h2>
           <p>Start tracking your stock rotation strategies and covered calls</p>
-          <button className="cta-button">Add Your First Position</button>
+          <button className="cta-button" onClick={() => setShowAddModal(true)}>
+            Add Your First Position
+          </button>
         </div>
       ) : (
         <div className="position-list">
@@ -71,7 +79,21 @@ export default function Dashboard({ user }) {
         </div>
       )}
 
-      <button className="fab" title="Add Position">+</button>
+      <button className="fab" title="Add Position" onClick={() => setShowAddModal(true)}>
+        +
+      </button>
+
+      {showAddModal && (
+        <AddPosition
+          user={user}
+          onClose={() => setShowAddModal(false)}
+          onSave={handleSavePosition}
+        />
+      )}
+
+      <footer className="dashboard-footer">
+        v0.1.0 • {new Date().toISOString().split('T')[0]}
+      </footer>
     </div>
   );
 }

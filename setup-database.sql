@@ -34,12 +34,11 @@ CREATE TABLE strategies (
   name TEXT NOT NULL,
   type TEXT DEFAULT 'stock_rotation' CHECK (type IN ('stock_rotation', 'covered_call_scan')),
 
-  -- Stock rotation config
+  -- Stock rotation config (ENTRY signals only - exit thresholds belong to positions)
   ticker TEXT NOT NULL,
   benchmark TEXT,
   lookback_days INTEGER,
   entry_threshold DECIMAL(5, 4),
-  exit_threshold DECIMAL(5, 4),
 
   -- Covered call scan config
   min_premium_pct DECIMAL(5, 2),

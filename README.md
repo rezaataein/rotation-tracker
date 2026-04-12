@@ -31,18 +31,18 @@ Multi-user trading position tracker with automated signal monitoring and push no
 ## 📋 **What This App Does**
 
 ### **1. Strategy Scanner**
-User configures strategy to monitor:
+User configures strategy to monitor entry signals:
 ```
 Stock: NVDA
 Benchmark: VGT
 Lookback: 45 days
-Entry: -12% underperformance
-Exit: +6% outperformance
+Entry Signal: -12% underperformance
 ```
 
 App checks 3x daily (9am, 12pm, 3pm ET):
 - If NVDA -12% vs VGT → Send BUY signal push notification
-- If user opens position → Track it automatically
+- User manually creates position and sets exit threshold (e.g., +6%)
+- Cron monitors position exit threshold
 - When NVDA +6% vs VGT → Send SELL signal push notification
 
 ### **2. Position Tracking**

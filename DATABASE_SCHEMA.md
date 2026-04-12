@@ -103,15 +103,14 @@ CREATE TABLE strategies (
   user_id UUID REFERENCES auth.users ON DELETE CASCADE NOT NULL,
   
   -- Strategy metadata
-  name TEXT NOT NULL,  -- e.g., "NVDA vs VGT 45d/12%"
+  name TEXT NOT NULL,  -- e.g., "NVDA vs VGT 45d -12%"
   type TEXT DEFAULT 'stock_rotation' CHECK (type IN ('stock_rotation', 'covered_call_scan')),
   
-  -- Stock rotation config
+  -- Stock rotation config (ENTRY signals only)
   ticker TEXT NOT NULL,
   benchmark TEXT,  -- NULL for covered call scans
   lookback_days INTEGER,  -- e.g., 45
-  entry_threshold DECIMAL(5, 4),  -- e.g., -0.12 for -12%
-  exit_threshold DECIMAL(5, 4),   -- e.g., 0.06 for 6%
+  entry_threshold DECIMAL(5, 4),  -- e.g., -0.12 for -12% underperformance to trigger BUY signal
   
   -- Covered call scan config
   min_premium_pct DECIMAL(5, 2),  -- e.g., 1.0 for 1%
@@ -286,15 +285,14 @@ $$ LANGUAGE plpgsql;
 
 -- Insert sample strategy (replace user_id with your actual user ID)
 /*
-INSERT INTO strategies (user_id, name, ticker, benchmark, lookback_days, entry_threshold, exit_threshold)
+INSERT INTO strategies (user_id, name, ticker, benchmark, lookback_days, entry_threshold)
 VALUES (
   'YOUR_USER_ID_HERE',
-  'NVDA vs VGT 45d/12%',
+  'NVDA vs VGT 45d -12%',
   'NVDA',
   'VGT',
   45,
-  -0.12,
-  0.06
+  -0.12
 );
 
 -- Insert sample position
@@ -407,8 +405,8 @@ ORDER BY s.last_checked_at DESC;
 - `ticker` - Stock to monitor (e.g., NVDA)
 - `benchmark` - Compare against (e.g., VGT)
 - `lookback_days` - Period to calculate performance (e.g., 45)
-- `entry_threshold` - Trigger BUY when underperformance < this (e.g., -0.12 = -12%)
-- `exit_threshold` - Trigger SELL when outperformance >= this (e.g., 0.06 = 6%)
+- `entry_threshold` - Trigger BUY signal when underperformance < this (e.g., -0.12 = -12%)
+- **Note:** Exit thresholds are NOT in strategies - they're defined per position when opened
 
 **Covered Call Scan:**
 - `ticker` - Stock to scan options for

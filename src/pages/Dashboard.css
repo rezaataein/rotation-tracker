@@ -167,6 +167,20 @@
   transform: scale(0.95);
 }
 
+/* Footer */
+.dashboard-footer {
+  position: fixed;
+  bottom: 60px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  padding: 0.5rem;
+  font-size: 0.75rem;
+  color: #9ca3af;
+  background: transparent;
+  pointer-events: none;
+}
+
 /* Mobile Responsive */
 @media (max-width: 640px) {
   .dashboard-header {
