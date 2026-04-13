@@ -175,8 +175,22 @@ npm run build
 
 - `README.md` - This file (overview)
 - `.dev/IMPLEMENTATION.md` - Step-by-step build guide (local only)
+- `.dev/VERSIONING.md` - Versioning strategy (local only)
 - `ARCHITECTURE.md` - Technical decisions & details
 - `DATABASE_SCHEMA.md` - Complete database structure
+
+---
+
+## 🔢 **Versioning**
+
+This project uses **strict per-commit versioning**:
+- Every commit bumps the patch version (0.1.X → 0.1.Y)
+- Version displayed in dashboard footer
+- Commit messages include version (e.g., "v0.1.5 - Fix bug")
+
+**Why:** Easy debugging, deployment tracking, user verification
+
+Current version shown in footer: `v{version} • Built {date}`
 
 ---
 
