@@ -1,11 +1,17 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import './AddPosition.css';
 
 export default function AddPosition({ user, onClose, onSave }) {
   const [type, setType] = useState('stock_rotation');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const [fieldError, setFieldError] = useState({ field: null, message: null });
+  const [systemError, setSystemError] = useState(null);
+
+  // Refs for auto-focus on error
+  const formRef = useRef(null);
+  const tickerRef = useRef(null);
+  const benchmarkRef = useRef(null);
 
   // Stock rotation fields
   const [ticker, setTicker] = useState('');
@@ -24,7 +30,8 @@ export default function AddPosition({ user, onClose, onSave }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setError(null);
+    setFieldError({ field: null, message: null });
+    setSystemError(null);
 
     try {
       // Step 1: Validate ticker with Yahoo Finance
@@ -33,36 +40,106 @@ export default function AddPosition({ user, onClose, onSave }) {
 
       try {
         // Validate main ticker
-        const tickerResponse = await fetch(
-          `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${tickerToValidate}`
-        );
-        const tickerData = await tickerResponse.json();
+        let tickerResponse;
+        try {
+          tickerResponse = await fetch(
+            `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${tickerToValidate}`,
+            { signal: AbortSignal.timeout(10000) } // 10s timeout
+          );
+        } catch (fetchError) {
+          if (fetchError.name === 'TimeoutError') {
+            throw new Error('Request timed out. Yahoo Finance is slow to respond. Please try again.');
+          }
+          throw new Error('Network error. Please check your internet connection and try again.');
+        }
+
+        if (!tickerResponse.ok) {
+          if (tickerResponse.status === 429) {
+            throw new Error('Too many requests. Please wait a moment and try again.');
+          }
+          if (tickerResponse.status >= 500) {
+            throw new Error('Yahoo Finance service error. Please try again later.');
+          }
+          throw new Error(`HTTP error ${tickerResponse.status}. Unable to validate ticker.`);
+        }
+
+        let tickerData;
+        try {
+          tickerData = await tickerResponse.json();
+        } catch (parseError) {
+          throw new Error('Invalid response from Yahoo Finance. Please try again.');
+        }
 
         if (!tickerData.quoteResponse?.result || tickerData.quoteResponse.result.length === 0) {
-          throw new Error(`Ticker "${tickerToValidate}" not found. Please verify the symbol.`);
+          const err = new Error(`Ticker "${tickerToValidate}" not found. Please verify the symbol is correct.`);
+          err.field = 'ticker';
+          throw err;
         }
 
         // Validate benchmark for stock rotation
         if (benchmarkToValidate) {
-          const benchResponse = await fetch(
-            `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${benchmarkToValidate}`
-          );
-          const benchData = await benchResponse.json();
+          let benchResponse;
+          try {
+            benchResponse = await fetch(
+              `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${benchmarkToValidate}`,
+              { signal: AbortSignal.timeout(10000) }
+            );
+          } catch (fetchError) {
+            if (fetchError.name === 'TimeoutError') {
+              throw new Error('Request timed out while validating benchmark. Please try again.');
+            }
+            throw new Error('Network error while validating benchmark. Please check your connection.');
+          }
+
+          if (!benchResponse.ok) {
+            if (benchResponse.status === 429) {
+              throw new Error('Too many requests. Please wait a moment and try again.');
+            }
+            if (benchResponse.status >= 500) {
+              throw new Error('Yahoo Finance service error while validating benchmark.');
+            }
+            throw new Error(`HTTP error ${benchResponse.status} while validating benchmark.`);
+          }
+
+          let benchData;
+          try {
+            benchData = await benchResponse.json();
+          } catch (parseError) {
+            throw new Error('Invalid response while validating benchmark.');
+          }
 
           if (!benchData.quoteResponse?.result || benchData.quoteResponse.result.length === 0) {
-            throw new Error(`Benchmark "${benchmarkToValidate}" not found. Please verify the symbol.`);
+            const err = new Error(`Benchmark "${benchmarkToValidate}" not found. Please verify the symbol is correct.`);
+            err.field = 'benchmark';
+            throw err;
           }
         }
       } catch (validationError) {
-        if (validationError.message.includes('not found')) {
-          // Invalid ticker - show specific error
-          setError(validationError.message);
-          setLoading(false);
-          return;
-        }
-        // Network/service error
-        setError('Unable to validate ticker. Yahoo Finance may be unavailable. Please try again.');
         setLoading(false);
+
+        // Categorize error type
+        if (validationError.field) {
+          // Field-specific error (ticker or benchmark not found)
+          setFieldError({
+            field: validationError.field,
+            message: validationError.message
+          });
+
+          // Auto-focus the problematic field
+          if (validationError.field === 'ticker' && tickerRef.current) {
+            tickerRef.current.focus();
+          } else if (validationError.field === 'benchmark' && benchmarkRef.current) {
+            benchmarkRef.current.focus();
+          }
+        } else {
+          // System error (network, timeout, service issues)
+          setSystemError(validationError.message);
+
+          // Scroll modal to top to show banner
+          if (formRef.current) {
+            formRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+        }
         return;
       }
 
@@ -101,7 +178,14 @@ export default function AddPosition({ user, onClose, onSave }) {
       onSave(data[0]);
       onClose();
     } catch (err) {
-      setError(err.message);
+      // Database/save errors - show as system error
+      setSystemError(err.message || 'Failed to save position. Please try again.');
+      setLoading(false);
+
+      // Scroll to top to show error
+      if (formRef.current) {
+        formRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
     } finally {
       setLoading(false);
     }
@@ -115,8 +199,22 @@ export default function AddPosition({ user, onClose, onSave }) {
           <button className="close-btn" onClick={onClose}>×</button>
         </div>
 
-        <form onSubmit={handleSubmit}>
-          {error && <div className="error-message">{error}</div>}
+        <form ref={formRef} onSubmit={handleSubmit}>
+          {/* System error banner */}
+          {systemError && (
+            <div className="system-error-banner">
+              <span className="error-icon">⚠️</span>
+              <span>{systemError}</span>
+              <button
+                type="button"
+                className="close-error-btn"
+                onClick={() => setSystemError(null)}
+                aria-label="Dismiss error"
+              >
+                ×
+              </button>
+            </div>
+          )}
 
           {/* Type Selector */}
           <div className="form-group">
@@ -143,16 +241,27 @@ export default function AddPosition({ user, onClose, onSave }) {
           <div className="form-group">
             <label htmlFor="ticker">Ticker *</label>
             <input
+              ref={tickerRef}
               id="ticker"
               type="text"
               value={ticker}
-              onChange={(e) => setTicker(e.target.value.toUpperCase())}
+              onChange={(e) => {
+                setTicker(e.target.value.toUpperCase());
+                // Clear field error when user starts typing
+                if (fieldError.field === 'ticker') {
+                  setFieldError({ field: null, message: null });
+                }
+              }}
               placeholder="NVDA"
               pattern="[A-Z0-9.-]{1,10}"
               title="Valid format: AAPL, BRK.A, HHIS.TO (letters, numbers, dots, hyphens)"
+              className={fieldError.field === 'ticker' ? 'input-error' : ''}
               required
               disabled={loading}
             />
+            {fieldError.field === 'ticker' && (
+              <div className="field-error">{fieldError.message}</div>
+            )}
           </div>
 
           <div className="form-group">
@@ -173,16 +282,27 @@ export default function AddPosition({ user, onClose, onSave }) {
               <div className="form-group">
                 <label htmlFor="benchmark">Benchmark *</label>
                 <input
+                  ref={benchmarkRef}
                   id="benchmark"
                   type="text"
                   value={benchmark}
-                  onChange={(e) => setBenchmark(e.target.value.toUpperCase())}
+                  onChange={(e) => {
+                    setBenchmark(e.target.value.toUpperCase());
+                    // Clear field error when user starts typing
+                    if (fieldError.field === 'benchmark') {
+                      setFieldError({ field: null, message: null });
+                    }
+                  }}
                   placeholder="VGT"
                   pattern="[A-Z0-9.-]{1,10}"
                   title="Valid format: VGT, SPY, QQQ (letters, numbers, dots, hyphens)"
+                  className={fieldError.field === 'benchmark' ? 'input-error' : ''}
                   required
                   disabled={loading}
                 />
+                {fieldError.field === 'benchmark' && (
+                  <div className="field-error">{fieldError.message}</div>
+                )}
               </div>
 
               <div className="form-row">

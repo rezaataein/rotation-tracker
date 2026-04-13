@@ -179,15 +179,80 @@ form {
   cursor: not-allowed;
 }
 
-/* Error Message */
-.error-message {
+/* System Error Banner */
+.system-error-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
   padding: 0.75rem;
-  background: #fef2f2;
-  border: 1px solid #fecaca;
+  background: #fef3c7;
+  border: 1px solid #f59e0b;
   border-radius: 0.5rem;
-  color: #dc2626;
+  color: #92400e;
   font-size: 0.875rem;
   margin-bottom: 1rem;
+}
+
+.error-icon {
+  font-size: 1.25rem;
+  line-height: 1;
+}
+
+.system-error-banner span:nth-child(2) {
+  flex: 1;
+}
+
+.close-error-btn {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  color: #92400e;
+  cursor: pointer;
+  padding: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.25rem;
+  transition: all 0.2s;
+  line-height: 1;
+}
+
+.close-error-btn:hover {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+/* Field Error (Inline) */
+.field-error {
+  color: #dc2626;
+  font-size: 0.875rem;
+  margin-top: 0.25rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.25rem;
+}
+
+.field-error::before {
+  content: '⚠️';
+  font-size: 0.875rem;
+}
+
+/* Input Error State */
+.input-error {
+  border-color: #dc2626 !important;
+  animation: shake 0.3s;
+}
+
+.input-error:focus {
+  border-color: #dc2626 !important;
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1) !important;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  75% { transform: translateX(5px); }
 }
 
 /* Mobile Responsive */
