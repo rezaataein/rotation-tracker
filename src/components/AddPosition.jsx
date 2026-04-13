@@ -259,6 +259,7 @@ export default function AddPosition({ user, onClose, onSave }) {
                   <input
                     id="entryStockPrice"
                     type="number"
+                    min="0"
                     step="0.01"
                     value={entryStockPrice}
                     onChange={(e) => setEntryStockPrice(e.target.value)}
@@ -273,6 +274,7 @@ export default function AddPosition({ user, onClose, onSave }) {
                   <input
                     id="entryBenchPrice"
                     type="number"
+                    min="0"
                     step="0.01"
                     value={entryBenchPrice}
                     onChange={(e) => setEntryBenchPrice(e.target.value)}
@@ -308,6 +310,7 @@ export default function AddPosition({ user, onClose, onSave }) {
                   <input
                     id="strike"
                     type="number"
+                    min="0"
                     step="0.01"
                     value={strike}
                     onChange={(e) => setStrike(e.target.value)}
@@ -336,6 +339,7 @@ export default function AddPosition({ user, onClose, onSave }) {
                   <input
                     id="entryPremium"
                     type="number"
+                    min="0"
                     step="0.01"
                     value={entryPremium}
                     onChange={(e) => setEntryPremium(e.target.value)}
@@ -350,6 +354,7 @@ export default function AddPosition({ user, onClose, onSave }) {
                   <input
                     id="alertTarget"
                     type="number"
+                    min="0"
                     step="0.01"
                     value={alertTarget}
                     onChange={(e) => setAlertTarget(e.target.value)}
