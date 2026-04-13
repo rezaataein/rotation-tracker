@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
+import RelativePerformanceChart from '../components/RelativePerformanceChart';
+import PremiumDecayChart from '../components/PremiumDecayChart';
 import './PositionDetail.css';
 
 export default function PositionDetail({ user }) {
@@ -121,10 +123,7 @@ function StockRotationDetail({ position }) {
     <div className="position-content">
       <section className="chart-section">
         <h2>Relative Performance</h2>
-        <div className="chart-placeholder">
-          📊 Chart will be implemented here
-          <p className="chart-note">{position.ticker} vs {position.benchmark}</p>
-        </div>
+        <RelativePerformanceChart position={position} />
       </section>
 
       <div className="position-sidebar">
@@ -185,10 +184,7 @@ function CoveredCallDetail({ position }) {
     <div className="position-content">
       <section className="chart-section">
         <h2>Premium Decay</h2>
-        <div className="chart-placeholder">
-          📊 Chart will be implemented here
-          <p className="chart-note">Option premium value over time</p>
-        </div>
+        <PremiumDecayChart position={position} />
       </section>
 
       <div className="position-sidebar">

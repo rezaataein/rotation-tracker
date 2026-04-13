@@ -1,0 +1,63 @@
+.chart-container {
+  width: 100%;
+  height: 400px;
+}
+
+.chart-loading {
+  height: 400px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+}
+
+.chart-loading .spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid #e5e7eb;
+  border-top-color: #3b82f6;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.chart-loading p {
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.chart-error {
+  height: 400px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: rgba(239, 68, 68, 0.05);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: 8px;
+}
+
+.chart-error p {
+  margin: 0;
+  color: #dc2626;
+  font-size: 14px;
+}
+
+.error-details {
+  font-size: 12px;
+  color: #991b1b;
+  max-width: 80%;
+  text-align: center;
+}
+
+.chart-disclaimer {
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  text-align: center;
+}
