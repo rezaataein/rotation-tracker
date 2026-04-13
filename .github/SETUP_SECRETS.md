@@ -1,29 +1,33 @@
 # GitHub Secrets Setup
 
-The monitoring workflow requires these secrets to be configured in your GitHub repository.
+The monitoring workflow requires GitHub secrets/variables to be configured.
 
-## Required Secrets
+## Required Configuration
 
-1. **SUPABASE_URL**
-   - Your Supabase project URL
-   - Example: `https://clovfqalpjdienqsfgdz.supabase.co`
-   - Get from: Supabase Dashboard → Settings → API
+### 1. Variables (already configured ✓)
 
-2. **SUPABASE_SERVICE_KEY**
-   - Your Supabase service role key (⚠️ SECRET!)
-   - This key bypasses Row-Level Security
-   - Get from: Supabase Dashboard → Settings → API → `service_role` key
+The workflow reuses existing variables from the deploy workflow:
 
-## How to Add Secrets
+- **VITE_SUPABASE_URL** - Already set (public, not secret)
+  - Used by both frontend build and monitoring script
+  - Should already exist from initial setup
+
+### 2. Secret (needs to be added)
+
+**SUPABASE_SERVICE_KEY** ⚠️
+- Your Supabase service role key (SECRET!)
+- This key bypasses Row-Level Security
+- Get from: Supabase Dashboard → Settings → API → `service_role` key
+
+## How to Add Secret
 
 1. Go to your GitHub repository
 2. Click **Settings** → **Secrets and variables** → **Actions**
 3. Click **New repository secret**
-4. Add each secret:
-   - Name: `SUPABASE_URL`
-   - Value: `https://your-project.supabase.co`
+4. Add the secret:
+   - Name: `SUPABASE_SERVICE_KEY`
+   - Value: `eyJhbGc...` (paste your service role key)
    - Click **Add secret**
-5. Repeat for `SUPABASE_SERVICE_KEY`
 
 ## Verify Secrets
 
