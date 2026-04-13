@@ -27,10 +27,50 @@ export default function AddPosition({ user, onClose, onSave }) {
     setError(null);
 
     try {
+      // Step 1: Validate ticker with Yahoo Finance
+      const tickerToValidate = ticker.toUpperCase();
+      const benchmarkToValidate = type === 'stock_rotation' ? benchmark.toUpperCase() : null;
+
+      try {
+        // Validate main ticker
+        const tickerResponse = await fetch(
+          `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${tickerToValidate}`
+        );
+        const tickerData = await tickerResponse.json();
+
+        if (!tickerData.quoteResponse?.result || tickerData.quoteResponse.result.length === 0) {
+          throw new Error(`Ticker "${tickerToValidate}" not found. Please verify the symbol.`);
+        }
+
+        // Validate benchmark for stock rotation
+        if (benchmarkToValidate) {
+          const benchResponse = await fetch(
+            `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${benchmarkToValidate}`
+          );
+          const benchData = await benchResponse.json();
+
+          if (!benchData.quoteResponse?.result || benchData.quoteResponse.result.length === 0) {
+            throw new Error(`Benchmark "${benchmarkToValidate}" not found. Please verify the symbol.`);
+          }
+        }
+      } catch (validationError) {
+        if (validationError.message.includes('not found')) {
+          // Invalid ticker - show specific error
+          setError(validationError.message);
+          setLoading(false);
+          return;
+        }
+        // Network/service error
+        setError('Unable to validate ticker. Yahoo Finance may be unavailable. Please try again.');
+        setLoading(false);
+        return;
+      }
+
+      // Step 2: Save to database (only if validation passed)
       const baseData = {
         user_id: user.id,
         type,
-        ticker: ticker.toUpperCase(),
+        ticker: tickerToValidate,
         status: 'open',
         entry_date: entryDate,
       };
@@ -38,7 +78,7 @@ export default function AddPosition({ user, onClose, onSave }) {
       const positionData = type === 'stock_rotation'
         ? {
             ...baseData,
-            benchmark: benchmark.toUpperCase(),
+            benchmark: benchmarkToValidate,
             entry_stock_price: parseFloat(entryStockPrice),
             entry_bench_price: parseFloat(entryBenchPrice),
             exit_threshold: parseFloat(exitThreshold),
@@ -106,8 +146,10 @@ export default function AddPosition({ user, onClose, onSave }) {
               id="ticker"
               type="text"
               value={ticker}
-              onChange={(e) => setTicker(e.target.value)}
+              onChange={(e) => setTicker(e.target.value.toUpperCase())}
               placeholder="NVDA"
+              pattern="[A-Z0-9.-]{1,10}"
+              title="Valid format: AAPL, BRK.A, HHIS.TO (letters, numbers, dots, hyphens)"
               required
               disabled={loading}
             />
@@ -134,8 +176,10 @@ export default function AddPosition({ user, onClose, onSave }) {
                   id="benchmark"
                   type="text"
                   value={benchmark}
-                  onChange={(e) => setBenchmark(e.target.value)}
+                  onChange={(e) => setBenchmark(e.target.value.toUpperCase())}
                   placeholder="VGT"
+                  pattern="[A-Z0-9.-]{1,10}"
+                  title="Valid format: VGT, SPY, QQQ (letters, numbers, dots, hyphens)"
                   required
                   disabled={loading}
                 />
@@ -227,7 +271,7 @@ export default function AddPosition({ user, onClose, onSave }) {
                     step="0.01"
                     value={entryPremium}
                     onChange={(e) => setEntryPremium(e.target.value)}
-                    placeholder="5.50"
+                    placeholder="2.50"
                     required
                     disabled={loading}
                   />

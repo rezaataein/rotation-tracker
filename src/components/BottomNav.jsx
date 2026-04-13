@@ -4,7 +4,6 @@ export default function BottomNav({ active = 'positions' }) {
   const navItems = [
     { id: 'scanner', icon: '🔍', label: 'Scanner' },
     { id: 'positions', icon: '📊', label: 'Positions' },
-    { id: 'options', icon: '📞', label: 'Options' },
     { id: 'settings', icon: '⚙️', label: 'Settings' }
   ];
 

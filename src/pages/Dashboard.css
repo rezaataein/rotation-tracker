@@ -26,6 +26,41 @@
   color: #6b7280;
 }
 
+/* Filter Tabs */
+.filter-tabs {
+  display: flex;
+  gap: 0.5rem;
+  padding: 1rem;
+  background: white;
+  border-bottom: 1px solid #e5e7eb;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.filter-tabs button {
+  padding: 0.5rem 1rem;
+  border: 1px solid #e5e7eb;
+  background: white;
+  color: #6b7280;
+  border-radius: 0.5rem;
+  font-weight: 500;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.filter-tabs button:hover {
+  background: #f9fafb;
+  border-color: #d1d5db;
+}
+
+.filter-tabs button.active {
+  background: #2563eb;
+  color: white;
+  border-color: #2563eb;
+}
+
 /* Loading State */
 .dashboard-loading {
   min-height: 100vh;
@@ -170,7 +205,7 @@
 /* Footer */
 .dashboard-footer {
   position: fixed;
-  bottom: 60px;
+  bottom: 60px; /* Above bottom nav */
   left: 0;
   right: 0;
   text-align: center;
@@ -179,6 +214,14 @@
   color: #9ca3af;
   background: transparent;
   pointer-events: none;
+  z-index: 5; /* Below nav (10) but above content */
+}
+
+/* Desktop - Footer above bottom nav more clearly */
+@media (min-width: 641px) {
+  .dashboard-footer {
+    bottom: 70px; /* More space above bottom nav on desktop */
+  }
 }
 
 /* Mobile Responsive */

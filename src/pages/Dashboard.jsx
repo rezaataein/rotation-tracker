@@ -8,6 +8,7 @@ export default function Dashboard({ user }) {
   const [positions, setPositions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [filter, setFilter] = useState('all'); // 'all', 'stock_rotation', 'covered_call'
 
   useEffect(() => {
     fetchPositions();
@@ -33,6 +34,11 @@ export default function Dashboard({ user }) {
   const handleSavePosition = (newPosition) => {
     setPositions([newPosition, ...positions]);
   };
+
+  const filteredPositions = positions.filter(position => {
+    if (filter === 'all') return true;
+    return position.type === filter;
+  });
 
   if (loading) {
     return (
@@ -60,24 +66,49 @@ export default function Dashboard({ user }) {
           </button>
         </div>
       ) : (
-        <div className="position-list">
-          {positions.map(position => (
-            <div key={position.id} className="position-card">
-              <div className="position-header">
-                <h3>{position.ticker}</h3>
-                <span className="position-type">{position.type}</span>
+        <>
+          <div className="filter-tabs">
+            <button
+              className={filter === 'all' ? 'active' : ''}
+              onClick={() => setFilter('all')}
+            >
+              All
+            </button>
+            <button
+              className={filter === 'stock_rotation' ? 'active' : ''}
+              onClick={() => setFilter('stock_rotation')}
+            >
+              Stock Rotation
+            </button>
+            <button
+              className={filter === 'covered_call' ? 'active' : ''}
+              onClick={() => setFilter('covered_call')}
+            >
+              Covered Calls
+            </button>
+          </div>
+
+          <div className="position-list">
+            {filteredPositions.map(position => (
+              <div key={position.id} className="position-card">
+                <div className="position-header">
+                  <h3>{position.ticker}</h3>
+                  <span className="position-type">
+                    {position.type === 'stock_rotation' ? 'Stock Rotation' : 'Covered Call'}
+                  </span>
+                </div>
+                <div className="position-body">
+                  {position.type === 'stock_rotation' && (
+                    <p>vs {position.benchmark}</p>
+                  )}
+                  {position.type === 'covered_call' && (
+                    <p>${position.strike} - {position.expiration}</p>
+                  )}
+                </div>
               </div>
-              <div className="position-body">
-                {position.type === 'stock_rotation' && (
-                  <p>vs {position.benchmark}</p>
-                )}
-                {position.type === 'covered_call' && (
-                  <p>${position.strike} - {position.expiration}</p>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        </>
       )}
 
       <button className="fab" title="Add Position" onClick={() => setShowAddModal(true)}>

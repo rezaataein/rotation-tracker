@@ -2,6 +2,8 @@
 
 **A mobile-first Progressive Web App for tracking stock rotation strategies and options positions.**
 
+🔗 **Live App:** [https://rezaataein.github.io/rotation-tracker/](https://rezaataein.github.io/rotation-tracker/)
+
 ---
 
 ## 🎯 **Project Overview**
@@ -127,6 +129,27 @@ App checks 3x daily (9am, 12pm, 3pm ET):
 - Admin can see everything via Supabase dashboard
 - Users can only see their own data
 - Passwords encrypted (bcrypt) - admin cannot see
+
+---
+
+## ✅ **Current Implementation Status**
+
+**Completed Features:**
+- ✅ User authentication (email/password, signup/login)
+- ✅ Add positions with real-time ticker validation (Yahoo Finance)
+- ✅ Dashboard with position cards
+- ✅ Filter positions (All / Stock Rotation / Covered Calls)
+- ✅ Bottom navigation (Scanner, Positions, Settings)
+- ✅ PWA support (installable, offline-ready)
+- ✅ Auto-deployment to GitHub Pages
+- ✅ Versioning (package.json + build date)
+
+**In Development:**
+- 🔨 Position detail view with charts
+- 🔨 Strategy scanner
+- 🔨 Settings page
+- 🔨 GitHub Actions cron job (price updates + signals)
+- 🔨 Push notifications
 
 ---
 
