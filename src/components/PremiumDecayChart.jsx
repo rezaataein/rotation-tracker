@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { createChart } from 'lightweight-charts';
+import * as LightweightCharts from 'lightweight-charts';
 import './Chart.css';
 
 export default function PremiumDecayChart({ position }) {
@@ -57,7 +57,7 @@ export default function PremiumDecayChart({ position }) {
     }
 
     // Create chart
-    const chart = createChart(chartContainerRef.current, {
+    const chart = LightweightCharts.createChart(chartContainerRef.current, {
       width: chartContainerRef.current.clientWidth,
       height: 400,
       layout: {
