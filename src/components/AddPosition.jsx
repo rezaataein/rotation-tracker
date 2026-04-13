@@ -19,7 +19,7 @@ export default function AddPosition({ user, onClose, onSave }) {
   const [benchmark, setBenchmark] = useState('');
   const [entryStockPrice, setEntryStockPrice] = useState('');
   const [entryBenchPrice, setEntryBenchPrice] = useState('');
-  const [exitThreshold, setExitThreshold] = useState('0.06');
+  const [exitThreshold, setExitThreshold] = useState('6');
   const [entryDate, setEntryDate] = useState(new Date().toISOString().split('T')[0]);
 
   // Covered call fields
@@ -106,7 +106,7 @@ export default function AddPosition({ user, onClose, onSave }) {
             benchmark: benchmarkToValidate,
             entry_stock_price: parseFloat(entryStockPrice),
             entry_bench_price: parseFloat(entryBenchPrice),
-            exit_threshold: parseFloat(exitThreshold),
+            exit_threshold: parseFloat(exitThreshold) / 100,
           }
         : {
             ...baseData,
@@ -286,14 +286,15 @@ export default function AddPosition({ user, onClose, onSave }) {
               </div>
 
               <div className="form-group">
-                <label htmlFor="exitThreshold">Exit Threshold (e.g., 0.06 for 6%) *</label>
+                <label htmlFor="exitThreshold">Outperformance Target (%) *</label>
                 <input
                   id="exitThreshold"
                   type="number"
-                  step="0.01"
+                  min="0"
+                  step="0.1"
                   value={exitThreshold}
                   onChange={(e) => setExitThreshold(e.target.value)}
-                  placeholder="0.06"
+                  placeholder="6"
                   required
                   disabled={loading}
                 />
