@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react';
 import { supabase } from '../lib/supabase';
+import { validateTickers } from '../lib/yahooFinance';
 import './AddPosition.css';
 
 export default function AddPosition({ user, onClose, onSave }) {
@@ -39,81 +40,28 @@ export default function AddPosition({ user, onClose, onSave }) {
       const benchmarkToValidate = type === 'stock_rotation' ? benchmark.toUpperCase() : null;
 
       try {
-        // Validate main ticker
-        let tickerResponse;
-        try {
-          tickerResponse = await fetch(
-            `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${tickerToValidate}`,
-            { signal: AbortSignal.timeout(10000) } // 10s timeout
-          );
-        } catch (fetchError) {
-          if (fetchError.name === 'TimeoutError') {
-            throw new Error('Request timed out. Yahoo Finance is slow to respond. Please try again.');
-          }
-          throw new Error('Network error. Please check your internet connection and try again.');
+        // Build list of symbols to validate
+        const symbolsToValidate = [tickerToValidate];
+        if (benchmarkToValidate) {
+          symbolsToValidate.push(benchmarkToValidate);
         }
 
-        if (!tickerResponse.ok) {
-          if (tickerResponse.status === 429) {
-            throw new Error('Too many requests. Please wait a moment and try again.');
-          }
-          if (tickerResponse.status >= 500) {
-            throw new Error('Yahoo Finance service error. Please try again later.');
-          }
-          throw new Error(`HTTP error ${tickerResponse.status}. Unable to validate ticker.`);
-        }
+        // Validate all symbols at once
+        const { valid, invalid } = await validateTickers(symbolsToValidate);
 
-        let tickerData;
-        try {
-          tickerData = await tickerResponse.json();
-        } catch (parseError) {
-          throw new Error('Invalid response from Yahoo Finance. Please try again.');
-        }
-
-        if (!tickerData.quoteResponse?.result || tickerData.quoteResponse.result.length === 0) {
+        // Check which symbols failed
+        if (invalid.includes(tickerToValidate)) {
           const err = new Error(`Ticker "${tickerToValidate}" not found. Please verify the symbol is correct.`);
           err.field = 'ticker';
           throw err;
         }
 
-        // Validate benchmark for stock rotation
-        if (benchmarkToValidate) {
-          let benchResponse;
-          try {
-            benchResponse = await fetch(
-              `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${benchmarkToValidate}`,
-              { signal: AbortSignal.timeout(10000) }
-            );
-          } catch (fetchError) {
-            if (fetchError.name === 'TimeoutError') {
-              throw new Error('Request timed out while validating benchmark. Please try again.');
-            }
-            throw new Error('Network error while validating benchmark. Please check your connection.');
-          }
-
-          if (!benchResponse.ok) {
-            if (benchResponse.status === 429) {
-              throw new Error('Too many requests. Please wait a moment and try again.');
-            }
-            if (benchResponse.status >= 500) {
-              throw new Error('Yahoo Finance service error while validating benchmark.');
-            }
-            throw new Error(`HTTP error ${benchResponse.status} while validating benchmark.`);
-          }
-
-          let benchData;
-          try {
-            benchData = await benchResponse.json();
-          } catch (parseError) {
-            throw new Error('Invalid response while validating benchmark.');
-          }
-
-          if (!benchData.quoteResponse?.result || benchData.quoteResponse.result.length === 0) {
-            const err = new Error(`Benchmark "${benchmarkToValidate}" not found. Please verify the symbol is correct.`);
-            err.field = 'benchmark';
-            throw err;
-          }
+        if (benchmarkToValidate && invalid.includes(benchmarkToValidate)) {
+          const err = new Error(`Benchmark "${benchmarkToValidate}" not found. Please verify the symbol is correct.`);
+          err.field = 'benchmark';
+          throw err;
         }
+
       } catch (validationError) {
         setLoading(false);
 
