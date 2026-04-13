@@ -4,7 +4,7 @@ import { fetchMultipleHistoricalPrices } from '../lib/yahooFinance';
 import { getTodayString } from '../lib/dateUtils';
 import './Chart.css';
 
-export default function RelativePerformanceChart({ position }) {
+export default function RelativePerformanceChart({ position, onPricesLoaded }) {
   const chartContainerRef = useRef(null);
   const chartRef = useRef(null);
   const [loading, setLoading] = useState(true);
@@ -43,6 +43,15 @@ export default function RelativePerformanceChart({ position }) {
 
       if (!stockData || !benchData) {
         throw new Error('Failed to fetch price data');
+      }
+
+      // Pass current prices to parent if callback provided
+      if (onPricesLoaded) {
+        const currentStockPrice = stockData.meta?.regularMarketPrice;
+        const currentBenchPrice = benchData.meta?.regularMarketPrice;
+        if (currentStockPrice && currentBenchPrice) {
+          onPricesLoaded(currentStockPrice, currentBenchPrice);
+        }
       }
 
       // Calculate relative performance
@@ -100,6 +109,8 @@ export default function RelativePerformanceChart({ position }) {
   const isValidNumber = (value) => {
     return value != null && !isNaN(value) && isFinite(value);
   };
+
+  // Helper to validate number values in calculations
 
   const renderChart = (data, exitThreshold) => {
     if (!chartContainerRef.current) return;
@@ -183,23 +194,21 @@ export default function RelativePerformanceChart({ position }) {
     };
   };
 
-  if (loading) {
-    return (
-      <div className="chart-loading">
-        <div className="spinner"></div>
-        <p>Loading chart data...</p>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="chart-error">
-        <p>⚠️ Failed to load chart</p>
-        <p className="error-details">{error}</p>
-      </div>
-    );
-  }
-
-  return <div ref={chartContainerRef} className="chart-container" />;
+  return (
+    <div style={{ position: 'relative' }}>
+      {loading && (
+        <div className="chart-loading" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: 'white', zIndex: 10 }}>
+          <div className="spinner"></div>
+          <p>Loading chart data...</p>
+        </div>
+      )}
+      {error && (
+        <div className="chart-error" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 10 }}>
+          <p>⚠️ Failed to load chart</p>
+          <p className="error-details">{error}</p>
+        </div>
+      )}
+      <div ref={chartContainerRef} className="chart-container" />
+    </div>
+  );
 }

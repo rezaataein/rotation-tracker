@@ -129,3 +129,33 @@ export async function fetchMultipleHistoricalPrices(tickers, startDate, endDate)
     throw new Error(`Unable to fetch prices: ${error.message}`);
   }
 }
+
+/**
+ * Fetch options data for a ticker
+ * @param {string} ticker - Ticker symbol
+ * @returns {Promise<Object>} - Options chain data (quote, calls, puts, expirations)
+ */
+export async function fetchOptions(ticker) {
+  try {
+    const { data, error } = await supabase.functions.invoke('fetch-quotes', {
+      body: {
+        symbols: [ticker],
+        fetchOptions: true
+      }
+    });
+
+    if (error) {
+      console.error('Edge Function error:', error);
+      throw new Error(error.message || 'Failed to fetch options data');
+    }
+
+    const result = data.optionsResponse?.result?.[0];
+    if (!result) {
+      throw new Error(`No options data returned for ${ticker}`);
+    }
+
+    return result;
+  } catch (error) {
+    throw new Error(`Unable to fetch options for ${ticker}: ${error.message}`);
+  }
+}

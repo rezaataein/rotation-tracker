@@ -1,15 +1,17 @@
 import { useEffect, useRef, useState } from 'react';
 import * as LightweightCharts from 'lightweight-charts';
+import { supabase } from '../lib/supabase';
 import './Chart.css';
 
 export default function PremiumDecayChart({ position }) {
   const chartContainerRef = useRef(null);
   const chartRef = useRef(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [hasData, setHasData] = useState(true);
 
   useEffect(() => {
-    renderChart();
-    setLoading(false);
+    fetchAndRenderChart();
 
     // Cleanup on unmount
     return () => {
@@ -20,7 +22,54 @@ export default function PremiumDecayChart({ position }) {
     };
   }, [position.id]);
 
-  const renderChart = () => {
+  const fetchAndRenderChart = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      // Fetch historical price snapshots for this position
+      const { data: snapshots, error: fetchError } = await supabase
+        .from('option_price_snapshots')
+        .select('timestamp, bid, ask, last_price')
+        .eq('position_id', position.id)
+        .order('timestamp', { ascending: true });
+
+      if (fetchError) throw fetchError;
+
+      if (!snapshots || snapshots.length === 0) {
+        setHasData(false);
+        setLoading(false);
+        return;
+      }
+
+      setHasData(true);
+
+      // Wait for container to be ready
+      let attempts = 0;
+      const maxAttempts = 10;
+
+      const tryRender = () => {
+        if (chartContainerRef.current) {
+          renderChart(snapshots);
+          setLoading(false);
+        } else if (attempts < maxAttempts) {
+          attempts++;
+          setTimeout(tryRender, 50);
+        } else {
+          throw new Error('Chart container not ready');
+        }
+      };
+
+      tryRender();
+
+    } catch (err) {
+      console.error('Error fetching option snapshots:', err);
+      setError(err.message);
+      setLoading(false);
+    }
+  };
+
+  const renderChart = (snapshots) => {
     if (!chartContainerRef.current) return;
 
     // Remove existing chart
@@ -28,33 +77,11 @@ export default function PremiumDecayChart({ position }) {
       chartRef.current.remove();
     }
 
-    // Create theoretical decay curve from entry to expiration
-    const entryTime = new Date(position.entry_date).getTime() / 1000;
-    const expiryTime = new Date(position.expiration).getTime() / 1000;
-    const now = Date.now() / 1000;
-
-    const data = [];
-    const daysCount = Math.ceil((expiryTime - entryTime) / 86400); // 86400 = seconds in a day
-
-    // Generate theoretical exponential decay
-    for (let i = 0; i <= daysCount; i++) {
-      const timestamp = entryTime + (i * 86400);
-      if (timestamp > now + 86400) break; // Don't show future beyond tomorrow
-
-      const daysToExpiry = (expiryTime - timestamp) / 86400;
-      const totalDays = (expiryTime - entryTime) / 86400;
-
-      // Exponential decay: value decreases faster as expiration approaches
-      const timeRatio = daysToExpiry / totalDays;
-      const decayFactor = Math.pow(timeRatio, 0.7); // 0.7 creates realistic option decay curve
-
-      const theoreticalValue = position.entry_premium * decayFactor;
-
-      data.push({
-        time: timestamp,
-        value: Math.max(0, theoreticalValue) // Can't go negative
-      });
-    }
+    // Convert snapshots to chart data (use mid price: (bid + ask) / 2)
+    const data = snapshots.map(snapshot => ({
+      time: Math.floor(new Date(snapshot.timestamp).getTime() / 1000),
+      value: snapshot.last_price || ((snapshot.bid + snapshot.ask) / 2)
+    }));
 
     // Create chart
     const chart = LightweightCharts.createChart(chartContainerRef.current, {
@@ -96,18 +123,21 @@ export default function PremiumDecayChart({ position }) {
       value: position.alert_target
     }));
 
-    const targetSeries = chart.addSeries(LightweightCharts.LineSeries, {
-      color: '#10b981',
-      lineWidth: 2,
-      lineStyle: 2, // Dashed
-      priceFormat: {
-        type: 'price',
-        precision: 2,
-        minMove: 0.01,
-      },
-    });
+    // Add alert target line only if we have data
+    if (data.length > 0) {
+      const targetSeries = chart.addSeries(LightweightCharts.LineSeries, {
+        color: '#10b981',
+        lineWidth: 2,
+        lineStyle: 2, // Dashed
+        priceFormat: {
+          type: 'price',
+          precision: 2,
+          minMove: 0.01,
+        },
+      });
 
-    targetSeries.setData(targetData);
+      targetSeries.setData(targetData);
+    }
 
     // Fit content
     chart.timeScale().fitContent();
@@ -131,21 +161,32 @@ export default function PremiumDecayChart({ position }) {
     };
   };
 
-  if (loading) {
-    return (
-      <div className="chart-loading">
-        <div className="spinner"></div>
-        <p>Loading chart...</p>
-      </div>
-    );
-  }
-
   return (
-    <div>
+    <div style={{ position: 'relative' }}>
+      {loading && (
+        <div className="chart-loading" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: 'white', zIndex: 10 }}>
+          <div className="spinner"></div>
+          <p>Loading chart...</p>
+        </div>
+      )}
+      {error && (
+        <div className="chart-error" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 10 }}>
+          <p>⚠️ Failed to load chart</p>
+          <p className="error-details">{error}</p>
+        </div>
+      )}
+      {!loading && !error && !hasData && (
+        <div className="chart-error" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: '#f9fafb', borderRadius: '8px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', zIndex: 10 }}>
+          <p style={{ fontSize: '14px', color: '#6b7280', margin: 0 }}>📊 No price history yet</p>
+          <p style={{ fontSize: '12px', color: '#9ca3af', marginTop: '8px' }}>Price data will appear once monitoring begins</p>
+        </div>
+      )}
       <div ref={chartContainerRef} className="chart-container" />
-      <p className="chart-disclaimer">
-        ⓘ Theoretical decay curve - actual premium may vary based on volatility and underlying price
-      </p>
+      {hasData && (
+        <p className="chart-disclaimer">
+          ⓘ Historical premium data - collected by automated monitoring
+        </p>
+      )}
     </div>
   );
 }

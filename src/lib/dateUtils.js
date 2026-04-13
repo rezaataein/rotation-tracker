@@ -32,6 +32,25 @@ export function dateToUnixTimestamp(dateString) {
 }
 
 /**
+ * Convert YYYY-MM-DD date string to UTC Unix timestamp (seconds)
+ * Treats the date as UTC midnight (for Yahoo Finance API)
+ * @param {string} dateString - Date in YYYY-MM-DD format
+ * @returns {number} - Unix timestamp in seconds (UTC)
+ */
+export function dateToUTCTimestamp(dateString) {
+  return Math.floor(Date.parse(dateString + 'T00:00:00Z') / 1000);
+}
+
+/**
+ * Convert Unix timestamp to YYYY-MM-DD date string in UTC
+ * @param {number} timestamp - Unix timestamp in seconds
+ * @returns {string} - Date string in YYYY-MM-DD format (UTC)
+ */
+export function timestampToUTCDateString(timestamp) {
+  return new Date(timestamp * 1000).toISOString().split('T')[0];
+}
+
+/**
  * Calculate optimal interval for Yahoo Finance API based on date range
  * @param {string} startDate - Start date in YYYY-MM-DD format
  * @param {string} endDate - End date in YYYY-MM-DD format
