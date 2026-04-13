@@ -52,7 +52,7 @@ export default function Dashboard({ user }) {
 
       {positions.length === 0 ? (
         <div className="empty-state">
-          <img src="/icons/icon-192.png" alt="" className="empty-icon" />
+          <img src={`${import.meta.env.BASE_URL}icons/icon-192.png`} alt="" className="empty-icon" />
           <h2>No Positions Yet</h2>
           <p>Start tracking your stock rotation strategies and covered calls</p>
           <button className="cta-button" onClick={() => setShowAddModal(true)}>

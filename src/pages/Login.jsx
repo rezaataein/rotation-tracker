@@ -49,7 +49,7 @@ export default function Login() {
     <div className="login-container">
       <div className="login-card">
         <div className="login-header">
-          <img src="/icons/icon-192.png" alt="Rotation Tracker" className="app-logo" />
+          <img src={`${import.meta.env.BASE_URL}icons/icon-192.png`} alt="Rotation Tracker" className="app-logo" />
           <h1>Rotation Tracker</h1>
           <p>Track stock rotation strategies & options positions</p>
         </div>
