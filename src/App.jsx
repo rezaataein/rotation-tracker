@@ -1,6 +1,8 @@
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './hooks/useAuth';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
+import PositionDetail from './pages/PositionDetail';
 import BottomNav from './components/BottomNav';
 import './App.css';
 
@@ -22,12 +24,25 @@ function App() {
     return <Login />;
   }
 
-  // User is logged in - show dashboard
+  // User is logged in - show routes
   return (
-    <>
-      <Dashboard user={user} />
-      <BottomNav active="positions" />
-    </>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={
+          <>
+            <Dashboard user={user} />
+            <BottomNav active="positions" />
+          </>
+        } />
+        <Route path="/position/:id" element={
+          <>
+            <PositionDetail user={user} />
+            <BottomNav active="positions" />
+          </>
+        } />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </BrowserRouter>
   );
 }
 

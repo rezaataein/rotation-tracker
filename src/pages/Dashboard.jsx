@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import AddPosition from '../components/AddPosition';
 import packageJson from '../../package.json';
 import './Dashboard.css';
 
 export default function Dashboard({ user }) {
+  const navigate = useNavigate();
   const [positions, setPositions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
@@ -90,7 +92,11 @@ export default function Dashboard({ user }) {
 
           <div className="position-list">
             {filteredPositions.map(position => (
-              <div key={position.id} className="position-card">
+              <div
+                key={position.id}
+                className="position-card"
+                onClick={() => navigate(`/position/${position.id}`)}
+              >
                 <div className="position-header">
                   <h3>{position.ticker}</h3>
                   <span className="position-type">

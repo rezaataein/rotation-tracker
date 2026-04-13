@@ -57,3 +57,37 @@ export async function validateTickers(tickers) {
     throw new Error(`Unable to validate tickers: ${error.message}`);
   }
 }
+
+/**
+ * Fetch historical prices for a ticker
+ * @param {string} ticker - Ticker symbol
+ * @param {string} startDate - Start date (YYYY-MM-DD)
+ * @param {string} endDate - End date (YYYY-MM-DD)
+ * @returns {Promise<Object>} - Historical OHLCV data
+ */
+export async function fetchHistoricalPrices(ticker, startDate, endDate) {
+  try {
+    const { data, error } = await supabase.functions.invoke('fetch-quotes', {
+      body: {
+        symbols: [ticker],
+        fetchPrices: true,
+        startDate,
+        endDate
+      }
+    });
+
+    if (error) {
+      console.error('Edge Function error:', error);
+      throw new Error(error.message || 'Failed to fetch historical prices');
+    }
+
+    const result = data.quoteResponse?.result?.[0];
+    if (!result) {
+      throw new Error(`No data returned for ${ticker}`);
+    }
+
+    return result;
+  } catch (error) {
+    throw new Error(`Unable to fetch prices for ${ticker}: ${error.message}`);
+  }
+}
