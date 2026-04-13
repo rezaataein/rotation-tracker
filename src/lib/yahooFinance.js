@@ -3,6 +3,8 @@
  * Uses Supabase Edge Function to fetch stock quotes
  */
 
+import { supabase } from './supabase';
+
 const EDGE_FUNCTION_URL = import.meta.env.VITE_SUPABASE_EDGE_FUNCTION_URL;
 
 /**
@@ -11,10 +13,14 @@ const EDGE_FUNCTION_URL = import.meta.env.VITE_SUPABASE_EDGE_FUNCTION_URL;
  * @returns {Promise<Object>} - Yahoo Finance response
  */
 export async function fetchQuotes(symbols) {
+  // Get JWT from current session
+  const { data: { session } } = await supabase.auth.getSession();
+
   const response = await fetch(EDGE_FUNCTION_URL, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
+      'Authorization': `Bearer ${session?.access_token}`,
     },
     body: JSON.stringify({ symbols }),
   });
