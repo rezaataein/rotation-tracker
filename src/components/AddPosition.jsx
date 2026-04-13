@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import { validateTickers } from '../lib/yahooFinance';
+import { getTodayString } from '../lib/dateUtils';
 import './AddPosition.css';
 
 export default function AddPosition({ user, onClose, onSave }) {
@@ -218,6 +219,7 @@ export default function AddPosition({ user, onClose, onSave }) {
               id="entryDate"
               type="date"
               value={entryDate}
+              max={getTodayString()}
               onChange={(e) => setEntryDate(e.target.value)}
               required
               disabled={loading}
@@ -327,6 +329,7 @@ export default function AddPosition({ user, onClose, onSave }) {
                     id="expiration"
                     type="date"
                     value={expiration}
+                    min={getTodayString()}
                     onChange={(e) => setExpiration(e.target.value)}
                     required
                     disabled={loading}

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import * as LightweightCharts from 'lightweight-charts';
-import { fetchHistoricalPrices } from '../lib/yahooFinance';
+import { fetchMultipleHistoricalPrices } from '../lib/yahooFinance';
+import { getTodayString } from '../lib/dateUtils';
 import './Chart.css';
 
 export default function RelativePerformanceChart({ position }) {
@@ -26,14 +27,23 @@ export default function RelativePerformanceChart({ position }) {
       setLoading(true);
       setError(null);
 
-      const today = new Date().toISOString().split('T')[0];
+      const today = getTodayString();
       const entryDate = position.entry_date;
 
-      // Fetch both stock and benchmark data
-      const [stockData, benchData] = await Promise.all([
-        fetchHistoricalPrices(position.ticker, entryDate, today),
-        fetchHistoricalPrices(position.benchmark, entryDate, today)
-      ]);
+      // Fetch both stock and benchmark data in a single API call
+      const results = await fetchMultipleHistoricalPrices(
+        [position.ticker, position.benchmark],
+        entryDate,
+        today
+      );
+
+      // results[0] = stock, results[1] = benchmark
+      const stockData = results.find(r => r.symbol === position.ticker);
+      const benchData = results.find(r => r.symbol === position.benchmark);
+
+      if (!stockData || !benchData) {
+        throw new Error('Failed to fetch price data');
+      }
 
       // Calculate relative performance
       const relativePerformance = calculateRelativePerformance(
@@ -57,13 +67,16 @@ export default function RelativePerformanceChart({ position }) {
   const calculateRelativePerformance = (stockData, benchData, entryStockPrice, entryBenchPrice) => {
     const data = [];
 
-    // Align timestamps (use stock data as reference)
-    stockData.timestamps.forEach((timestamp, i) => {
+    // Ensure both arrays have same length (use minimum)
+    const minLength = Math.min(stockData.timestamps.length, benchData.timestamps.length);
+
+    for (let i = 0; i < minLength; i++) {
+      const timestamp = stockData.timestamps[i];
       const stockClose = stockData.close[i];
       const benchClose = benchData.close[i];
 
-      // Skip null values
-      if (stockClose === null || benchClose === null) return;
+      // Skip invalid values (null, undefined, NaN)
+      if (!isValidNumber(stockClose) || !isValidNumber(benchClose)) continue;
 
       // Calculate returns from entry
       const stockReturn = ((stockClose - entryStockPrice) / entryStockPrice) * 100;
@@ -72,13 +85,20 @@ export default function RelativePerformanceChart({ position }) {
       // Relative performance = stock return - benchmark return
       const spread = stockReturn - benchReturn;
 
+      // Verify spread is valid before adding
+      if (!isValidNumber(spread)) continue;
+
       data.push({
         time: timestamp,
         value: spread
       });
-    });
+    }
 
     return data;
+  };
+
+  const isValidNumber = (value) => {
+    return value != null && !isNaN(value) && isFinite(value);
   };
 
   const renderChart = (data, exitThreshold) => {
@@ -111,7 +131,7 @@ export default function RelativePerformanceChart({ position }) {
     });
 
     // Add relative performance line
-    const lineSeries = chart.addLineSeries({
+    const lineSeries = chart.addSeries(LightweightCharts.LineSeries, {
       color: '#2563eb',
       lineWidth: 2,
       priceFormat: {
@@ -129,7 +149,7 @@ export default function RelativePerformanceChart({ position }) {
       value: thresholdValue
     }));
 
-    const thresholdSeries = chart.addLineSeries({
+    const thresholdSeries = chart.addSeries(LightweightCharts.LineSeries, {
       color: '#10b981',
       lineWidth: 2,
       lineStyle: 2, // Dashed

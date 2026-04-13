@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
+import { formatLocalDate, parseLocalDate } from '../lib/dateUtils';
 import RelativePerformanceChart from '../components/RelativePerformanceChart';
 import PremiumDecayChart from '../components/PremiumDecayChart';
 import './PositionDetail.css';
@@ -132,7 +133,7 @@ function StockRotationDetail({ position }) {
           <div className="info-grid">
             <div className="info-item">
               <span className="label">Date</span>
-              <span className="value">{new Date(position.entry_date).toLocaleDateString()}</span>
+              <span className="value">{formatLocalDate(position.entry_date)}</span>
             </div>
             <div className="info-item">
               <span className="label">{position.ticker}</span>
@@ -178,7 +179,7 @@ function StockRotationDetail({ position }) {
 }
 
 function CoveredCallDetail({ position }) {
-  const daysToExpiry = Math.ceil((new Date(position.expiration) - new Date()) / (1000 * 60 * 60 * 24));
+  const daysToExpiry = Math.ceil((parseLocalDate(position.expiration) - new Date()) / (1000 * 60 * 60 * 24));
 
   return (
     <div className="position-content">
@@ -197,7 +198,7 @@ function CoveredCallDetail({ position }) {
             </div>
             <div className="info-item">
               <span className="label">Expiration</span>
-              <span className="value">{new Date(position.expiration).toLocaleDateString()}</span>
+              <span className="value">{formatLocalDate(position.expiration)}</span>
             </div>
             <div className="info-item">
               <span className="label">Days Left</span>
@@ -211,7 +212,7 @@ function CoveredCallDetail({ position }) {
           <div className="info-grid">
             <div className="info-item">
               <span className="label">Date</span>
-              <span className="value">{new Date(position.entry_date).toLocaleDateString()}</span>
+              <span className="value">{formatLocalDate(position.entry_date)}</span>
             </div>
             <div className="info-item">
               <span className="label">Premium</span>

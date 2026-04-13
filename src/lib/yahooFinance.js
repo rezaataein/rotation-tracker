@@ -4,6 +4,7 @@
  */
 
 import { supabase } from './supabase';
+import { getOptimalInterval } from './dateUtils';
 
 /**
  * Fetch quotes for one or more symbols
@@ -67,12 +68,16 @@ export async function validateTickers(tickers) {
  */
 export async function fetchHistoricalPrices(ticker, startDate, endDate) {
   try {
+    // Automatically choose optimal interval based on date range
+    const interval = getOptimalInterval(startDate, endDate);
+
     const { data, error } = await supabase.functions.invoke('fetch-quotes', {
       body: {
         symbols: [ticker],
         fetchPrices: true,
         startDate,
-        endDate
+        endDate,
+        interval
       }
     });
 
@@ -89,5 +94,38 @@ export async function fetchHistoricalPrices(ticker, startDate, endDate) {
     return result;
   } catch (error) {
     throw new Error(`Unable to fetch prices for ${ticker}: ${error.message}`);
+  }
+}
+
+/**
+ * Fetch historical prices for multiple tickers in a single call
+ * @param {string[]} tickers - Array of ticker symbols
+ * @param {string} startDate - Start date (YYYY-MM-DD)
+ * @param {string} endDate - End date (YYYY-MM-DD)
+ * @returns {Promise<Object[]>} - Array of historical OHLCV data
+ */
+export async function fetchMultipleHistoricalPrices(tickers, startDate, endDate) {
+  try {
+    // Automatically choose optimal interval based on date range
+    const interval = getOptimalInterval(startDate, endDate);
+
+    const { data, error } = await supabase.functions.invoke('fetch-quotes', {
+      body: {
+        symbols: tickers,
+        fetchPrices: true,
+        startDate,
+        endDate,
+        interval
+      }
+    });
+
+    if (error) {
+      console.error('Edge Function error:', error);
+      throw new Error(error.message || 'Failed to fetch historical prices');
+    }
+
+    return data.quoteResponse?.result || [];
+  } catch (error) {
+    throw new Error(`Unable to fetch prices: ${error.message}`);
   }
 }

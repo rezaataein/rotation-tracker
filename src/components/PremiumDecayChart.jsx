@@ -78,7 +78,7 @@ export default function PremiumDecayChart({ position }) {
     });
 
     // Add decay curve
-    const lineSeries = chart.addLineSeries({
+    const lineSeries = chart.addSeries(LightweightCharts.LineSeries, {
       color: '#a855f7',
       lineWidth: 2,
       priceFormat: {
@@ -96,7 +96,7 @@ export default function PremiumDecayChart({ position }) {
       value: position.alert_target
     }));
 
-    const targetSeries = chart.addLineSeries({
+    const targetSeries = chart.addSeries(LightweightCharts.LineSeries, {
       color: '#10b981',
       lineWidth: 2,
       lineStyle: 2, // Dashed
