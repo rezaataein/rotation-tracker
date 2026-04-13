@@ -244,7 +244,55 @@ fetchHistoricalPrices(ticker, from_date, to_date)
 
 ## 📊 **Data Flow Examples**
 
-### **Flow 1: User Opens Position**
+### **Flow 1: User Adds Position (with Validation)**
+
+```
+User fills form (ticker, benchmark, prices, etc.)
+  ↓
+User clicks "Add Position"
+  ↓
+Frontend: Show loading state
+  ↓
+Frontend validates ticker with Yahoo Finance API:
+  - GET https://query1.finance.yahoo.com/v7/finance/quote?symbols=AAPL
+  - Timeout: 10 seconds
+  ↓
+IF ticker not found (404 or empty result):
+  ├─ Show inline error below ticker field (red)
+  ├─ Red border + shake animation
+  ├─ Auto-focus ticker input
+  └─ Block position creation
+  ↓
+ELSE IF network error / timeout / rate limit:
+  ├─ Show system error banner at top (yellow)
+  ├─ Auto-scroll modal to top
+  ├─ User can dismiss and retry
+  └─ Block position creation
+  ↓
+ELSE ticker valid:
+  ├─ For stock rotation: also validate benchmark
+  └─ Continue to save
+  ↓
+Save to Supabase positions table
+  ↓
+Close modal, show position on dashboard
+  ↓
+Total time: 1-3 seconds (depending on network)
+```
+
+**Error Messages:**
+- Field errors: "Ticker 'ZZZZZ' not found. Please verify the symbol is correct."
+- System errors: "Request timed out. Yahoo Finance is slow to respond. Please try again."
+
+**Why pre-validate?**
+- ✅ No garbage data in database
+- ✅ Immediate user feedback
+- ✅ Prevents typos (APPL vs AAPL)
+- ✅ Simpler cron job (all tickers guaranteed valid)
+
+---
+
+### **Flow 2: User Views Position Detail**
 
 ```
 User taps NVDA position card
@@ -265,7 +313,7 @@ Render TradingView chart with:
 Display to user (<2 sec total)
 ```
 
-### **Flow 2: Cron Checks Positions**
+### **Flow 3: Cron Checks Positions**
 
 ```
 GitHub Actions triggers (9am ET)
@@ -306,7 +354,7 @@ FOR EACH user:
 Script completes (5-10 min for 100 users)
 ```
 
-### **Flow 3: Push Notification**
+### **Flow 4: Push Notification**
 
 ```
 Cron detects signal
@@ -411,6 +459,51 @@ const { data } = await supabase
 │  - Store in GitHub Secrets          │
 └─────────────────────────────────────┘
 ```
+
+---
+
+## 🎨 **UI Structure & Navigation**
+
+### **Page Hierarchy**
+
+```
+Login/Signup (public)
+  ↓
+Dashboard (authenticated)
+  ├─ Header: User email
+  ├─ Filter tabs: All | Stock Rotation | Covered Calls
+  ├─ Position cards (filtered list)
+  ├─ FAB: + button (opens Add Position modal)
+  ├─ Footer: Version info
+  └─ Bottom navigation (3 tabs):
+      ├─ 🔍 Scanner
+      ├─ 📊 Positions (active)
+      └─ ⚙️ Settings
+```
+
+### **Navigation Tabs** (Bottom)
+
+**Current:**
+- Scanner → Strategy scanner page (not built yet)
+- Positions → Dashboard with position list (current page)
+- Settings → User settings page (not built yet)
+
+**Removed:**
+- Options tab (was redundant - positions already shows all types)
+- Use filter tabs instead to separate stock rotation vs covered calls
+
+### **Modals**
+
+**Add Position:**
+- Full-screen modal on mobile
+- Form with type selector (Stock Rotation | Covered Call)
+- Dynamic fields based on type
+- Pre-validation with Yahoo Finance before save
+- Comprehensive error handling (inline field errors + system error banner)
+
+**Position Detail:** (not built yet)
+- Shows chart, current prices, P&L
+- Edit/Delete buttons
 
 ---
 
