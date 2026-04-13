@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import AddPosition from '../components/AddPosition';
+import packageJson from '../../package.json';
 import './Dashboard.css';
 
 export default function Dashboard({ user }) {
@@ -92,7 +93,7 @@ export default function Dashboard({ user }) {
       )}
 
       <footer className="dashboard-footer">
-        v0.1.0 • {new Date().toISOString().split('T')[0]}
+        v{packageJson.version} • Built {__BUILD_DATE__}
       </footer>
     </div>
   );

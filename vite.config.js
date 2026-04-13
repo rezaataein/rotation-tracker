@@ -5,6 +5,9 @@ import { VitePWA } from 'vite-plugin-pwa';
 // https://vite.dev/config/
 export default defineConfig({
   base: '/rotation-tracker/',
+  define: {
+    __BUILD_DATE__: JSON.stringify(new Date().toISOString().split('T')[0])
+  },
   plugins: [
     react(),
     VitePWA({
