@@ -201,7 +201,7 @@ export default function AddPosition({ user, onClose, onSave }) {
                 }
               }}
               placeholder="NVDA"
-              pattern="[A-Z0-9.-]{1,10}"
+              pattern="[A-Z0-9.\-]{1,10}"
               title="Valid format: AAPL, BRK.A, HHIS.TO (letters, numbers, dots, hyphens)"
               className={fieldError.field === 'ticker' ? 'input-error' : ''}
               required
@@ -242,7 +242,7 @@ export default function AddPosition({ user, onClose, onSave }) {
                     }
                   }}
                   placeholder="VGT"
-                  pattern="[A-Z0-9.-]{1,10}"
+                  pattern="[A-Z0-9.\-]{1,10}"
                   title="Valid format: VGT, SPY, QQQ (letters, numbers, dots, hyphens)"
                   className={fieldError.field === 'benchmark' ? 'input-error' : ''}
                   required

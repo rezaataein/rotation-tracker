@@ -5,32 +5,23 @@
 
 import { supabase } from './supabase';
 
-const EDGE_FUNCTION_URL = import.meta.env.VITE_SUPABASE_EDGE_FUNCTION_URL;
-
 /**
  * Fetch quotes for one or more symbols
  * @param {string[]} symbols - Array of ticker symbols (e.g., ["AAPL", "MSFT"])
  * @returns {Promise<Object>} - Yahoo Finance response
  */
 export async function fetchQuotes(symbols) {
-  // Get JWT from current session
-  const { data: { session } } = await supabase.auth.getSession();
-
-  const response = await fetch(EDGE_FUNCTION_URL, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${session?.access_token}`,
-    },
-    body: JSON.stringify({ symbols }),
+  // Use Supabase client to invoke Edge Function (handles JWT automatically)
+  const { data, error } = await supabase.functions.invoke('fetch-quotes', {
+    body: { symbols }
   });
 
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Failed to fetch quotes');
+  if (error) {
+    console.error('Edge Function error:', error);
+    throw new Error(error.message || 'Failed to fetch quotes');
   }
 
-  return await response.json();
+  return data;
 }
 
 /**
@@ -56,13 +47,12 @@ export async function validateTicker(ticker) {
 export async function validateTickers(tickers) {
   try {
     const data = await fetchQuotes(tickers);
-    const results = data.quoteResponse?.result || [];
 
-    const foundSymbols = results.map(r => r.symbol);
-    const valid = tickers.filter(t => foundSymbols.includes(t));
-    const invalid = tickers.filter(t => !foundSymbols.includes(t));
-
-    return { valid, invalid };
+    // Edge Function now returns pre-computed valid/invalid arrays
+    return {
+      valid: data.valid || [],
+      invalid: data.invalid || []
+    };
   } catch (error) {
     throw new Error(`Unable to validate tickers: ${error.message}`);
   }
