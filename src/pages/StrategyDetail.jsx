@@ -3,7 +3,9 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import ConfirmDialog from '../components/ConfirmDialog';
 import StrategyComparisonChart from '../components/StrategyComparisonChart';
-import './StrategyDetail.css';
+import DetailPageLayout from '../components/DetailPageLayout';
+import { CurrentPricesCard, SpreadCard } from '../components/MetricCards';
+import '../styles/DetailContent.css';
 
 export default function StrategyDetail({ user }) {
   const { id } = useParams();
@@ -85,18 +87,24 @@ export default function StrategyDetail({ user }) {
 
   if (loading) {
     return (
-      <div className="strategy-detail">
+      <DetailPageLayout
+        title="Loading..."
+        onBack={() => navigate('/scanner')}
+      >
         <div className="loading-container">
           <div className="spinner"></div>
           <p>Loading strategy...</p>
         </div>
-      </div>
+      </DetailPageLayout>
     );
   }
 
   if (error) {
     return (
-      <div className="strategy-detail">
+      <DetailPageLayout
+        title="Error"
+        onBack={() => navigate('/scanner')}
+      >
         <div className="error-container">
           <h2>Error</h2>
           <p>{error}</p>
@@ -104,76 +112,57 @@ export default function StrategyDetail({ user }) {
             Back to Scanner
           </button>
         </div>
-      </div>
+      </DetailPageLayout>
     );
   }
 
   return (
-    <div className="strategy-detail">
-      {deleteError && (
-        <div className="error-banner">
-          <span className="error-icon">⚠️</span>
-          <span>{deleteError}</span>
-          <button
-            type="button"
-            className="close-error-btn"
-            onClick={() => setDeleteError(null)}
-            aria-label="Dismiss error"
-          >
-            ×
-          </button>
-        </div>
-      )}
-
-      <div className="strategy-header">
-        <button onClick={() => navigate('/scanner')} className="back-btn">
-          ← Back
-        </button>
-        <h1>{strategy.name}</h1>
-        <span className={`status-badge ${strategy.active ? 'active' : 'inactive'}`}>
-          {strategy.active ? 'Active' : 'Inactive'}
-        </span>
-      </div>
-
-      <div className="strategy-content">
+    <>
+      <DetailPageLayout
+        title={strategy.name}
+        badge={
+          <span className={`status-badge ${strategy.active ? 'active' : 'inactive'}`}>
+            {strategy.active ? 'Active' : 'Inactive'}
+          </span>
+        }
+        onBack={() => navigate('/scanner')}
+        error={deleteError}
+        onDismissError={() => setDeleteError(null)}
+        actions={
+          <>
+            <button className="btn-secondary" onClick={handleToggleActive}>
+              {strategy.active ? '⏸️ Pause' : '▶️ Activate'}
+            </button>
+            <button className="btn-secondary" onClick={() => alert('Edit not implemented yet')}>
+              Edit
+            </button>
+            <button className="btn-danger" onClick={() => setShowDeleteConfirm(true)}>
+              Delete
+            </button>
+          </>
+        }
+      >
         <section className="chart-section">
           <h2>Relative Performance - Last {strategy.lookback_days} Days</h2>
           <StrategyComparisonChart strategy={strategy} onDataLoaded={handleChartDataLoaded} />
         </section>
 
         <div className="metrics-row">
-          <div className="metrics-card">
-            <h3>Current Prices</h3>
-            <div className="price-grid">
-              <div className="price-item">
-                <span className="label" style={{ color: '#2563eb' }}>{strategy.ticker}</span>
-                <span className="value">
-                  {chartData?.stockPrice ? `$${chartData.stockPrice.toFixed(2)}` : '—'}
-                </span>
-              </div>
-              <div className="price-item">
-                <span className="label" style={{ color: '#a855f7' }}>{strategy.benchmark}</span>
-                <span className="value">
-                  {chartData?.benchPrice ? `$${chartData.benchPrice.toFixed(2)}` : '—'}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          <div className="metrics-card">
-            <h3>Spread ({strategy.lookback_days}d)</h3>
-            <div className="spread-display">
-              <span className={`spread-value ${meetsEntryThreshold ? 'buy-signal' : ''}`}>
-                {chartData?.spread != null ? `${chartData.spread.toFixed(2)}%` : '—'}
-              </span>
-              {meetsEntryThreshold && (
-                <span className="signal-badge">🎯 BUY SIGNAL</span>
-              )}
-            </div>
-            <div className="threshold-info">
-              Entry at {(Math.abs(strategy.entry_threshold) * 100).toFixed(1)}% underperformance
-            </div>
-          </div>
+          <CurrentPricesCard
+            stockTicker={strategy.ticker}
+            stockPrice={chartData?.stockPrice}
+            benchTicker={strategy.benchmark}
+            benchPrice={chartData?.benchPrice}
+            loading={!chartData}
+          />
+          <SpreadCard
+            spread={chartData?.spread}
+            threshold={strategy.entry_threshold * 100}
+            thresholdLabel={`Entry at ${(Math.abs(strategy.entry_threshold) * 100).toFixed(1)}% underperformance`}
+            signalLabel="🎯 BUY SIGNAL"
+            compareGreaterThan={false}
+            loading={!chartData}
+          />
         </div>
 
         <div className="config-section">
@@ -217,19 +206,7 @@ export default function StrategyDetail({ user }) {
           Automated checks run 3 times daily during market hours (9:30am, 12:30pm, 3:30pm ET).
           You'll receive a BUY signal notification when {strategy.ticker} underperforms {strategy.benchmark} by {(Math.abs(strategy.entry_threshold) * 100).toFixed(1)}% over the past {strategy.lookback_days} days.
         </div>
-      </div>
-
-      <div className="strategy-actions">
-        <button className="btn-secondary" onClick={handleToggleActive}>
-          {strategy.active ? '⏸️ Pause' : '▶️ Activate'}
-        </button>
-        <button className="btn-secondary" onClick={() => alert('Edit not implemented yet')}>
-          Edit
-        </button>
-        <button className="btn-danger" onClick={() => setShowDeleteConfirm(true)}>
-          Delete
-        </button>
-      </div>
+      </DetailPageLayout>
 
       <ConfirmDialog
         isOpen={showDeleteConfirm}
@@ -241,6 +218,6 @@ export default function StrategyDetail({ user }) {
         onConfirm={handleDelete}
         onCancel={() => setShowDeleteConfirm(false)}
       />
-    </div>
+    </>
   );
 }

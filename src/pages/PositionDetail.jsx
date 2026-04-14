@@ -6,7 +6,9 @@ import { fetchOptions } from '../lib/yahooFinance';
 import RelativePerformanceChart from '../components/RelativePerformanceChart';
 import PremiumDecayChart from '../components/PremiumDecayChart';
 import ConfirmDialog from '../components/ConfirmDialog';
-import './PositionDetail.css';
+import DetailPageLayout from '../components/DetailPageLayout';
+import { CurrentPricesCard, SpreadCard, PremiumCard, StockAndOptionCard } from '../components/MetricCards';
+import '../styles/DetailContent.css';
 
 export default function PositionDetail({ user }) {
   const { id } = useParams();
@@ -17,9 +19,22 @@ export default function PositionDetail({ user }) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteError, setDeleteError] = useState(null);
 
+  // Stock Rotation state
+  const [currentPrices, setCurrentPrices] = useState(null);
+
+  // Covered Call state
+  const [optionData, setOptionData] = useState(null);
+  const [loadingOption, setLoadingOption] = useState(true);
+
   useEffect(() => {
     fetchPosition();
   }, [id]);
+
+  useEffect(() => {
+    if (position && position.type === 'covered_call') {
+      fetchOptionData();
+    }
+  }, [position?.id]);
 
   const fetchPosition = async () => {
     try {
@@ -45,6 +60,34 @@ export default function PositionDetail({ user }) {
     }
   };
 
+  const fetchOptionData = async () => {
+    try {
+      setLoadingOption(true);
+      const data = await fetchOptions(position.ticker);
+
+      const calls = data.calls || [];
+      const positionExpDateString = position.expiration;
+
+      const matchingCall = calls.find(call => {
+        const strikeMatch = call.strike === position.strike;
+        const callExpDateString = timestampToUTCDateString(call.expiration);
+        const expMatch = callExpDateString === positionExpDateString;
+        return strikeMatch && expMatch;
+      });
+
+      console.log('Matching call:', matchingCall ? `Strike ${matchingCall.strike}, Exp ${timestampToUTCDateString(matchingCall.expiration)}` : 'Not found');
+
+      setOptionData({
+        stockPrice: data.quote?.regularMarketPrice,
+        option: matchingCall
+      });
+    } catch (error) {
+      console.error('Failed to fetch option data:', error);
+    } finally {
+      setLoadingOption(false);
+    }
+  };
+
   const handleDelete = async () => {
     try {
       const { error } = await supabase
@@ -65,18 +108,24 @@ export default function PositionDetail({ user }) {
 
   if (loading) {
     return (
-      <div className="position-detail">
+      <DetailPageLayout
+        title="Loading..."
+        onBack={() => navigate('/')}
+      >
         <div className="loading-container">
           <div className="spinner"></div>
           <p>Loading position...</p>
         </div>
-      </div>
+      </DetailPageLayout>
     );
   }
 
   if (error) {
     return (
-      <div className="position-detail">
+      <DetailPageLayout
+        title="Error"
+        onBack={() => navigate('/')}
+      >
         <div className="error-container">
           <h2>Error</h2>
           <p>{error}</p>
@@ -84,53 +133,155 @@ export default function PositionDetail({ user }) {
             Back to Dashboard
           </button>
         </div>
-      </div>
+      </DetailPageLayout>
     );
   }
 
   const isStockRotation = position.type === 'stock_rotation';
 
+  // Callback for stock rotation chart
+  const handlePricesLoaded = (stockPrice, benchPrice) => {
+    setCurrentPrices({ stockPrice, benchPrice });
+  };
+
+  // Stock rotation calculations
+  const currentSpread = currentPrices ?
+    ((currentPrices.stockPrice - position.entry_stock_price) / position.entry_stock_price * 100) -
+    ((currentPrices.benchPrice - position.entry_bench_price) / position.entry_bench_price * 100)
+    : null;
+  const targetSpread = isStockRotation ? position.exit_threshold * 100 : 0;
+
+  // Covered call calculations
+  const daysToExpiry = !isStockRotation ? Math.ceil((parseLocalDate(position.expiration) - new Date()) / (1000 * 60 * 60 * 24)) : 0;
+  const midPrice = optionData?.option ?
+    parseFloat(((optionData.option.bid + optionData.option.ask) / 2).toFixed(2)) : null;
+
   return (
-    <div className="position-detail">
-      {deleteError && (
-        <div className="error-banner">
-          <span className="error-icon">⚠️</span>
-          <span>{deleteError}</span>
-          <button
-            type="button"
-            className="close-error-btn"
-            onClick={() => setDeleteError(null)}
-            aria-label="Dismiss error"
-          >
-            ×
-          </button>
-        </div>
-      )}
+    <>
+      <DetailPageLayout
+        title={position.ticker}
+        badge={
+          <span className={`position-type-badge ${position.type}`}>
+            {isStockRotation ? 'Stock Rotation' : 'Covered Call'}
+          </span>
+        }
+        onBack={() => navigate('/')}
+        error={deleteError}
+        onDismissError={() => setDeleteError(null)}
+        actions={
+          <>
+            <button className="btn-secondary" onClick={() => alert('Edit not implemented yet')}>
+              Edit
+            </button>
+            <button className="btn-danger" onClick={() => setShowDeleteConfirm(true)}>
+              Delete
+            </button>
+          </>
+        }
+      >
+        {isStockRotation ? (
+          <>
+            <section className="chart-section">
+              <h2>Relative Performance</h2>
+              <RelativePerformanceChart position={position} onPricesLoaded={handlePricesLoaded} />
+            </section>
 
-      <div className="position-header">
-        <button onClick={() => navigate('/')} className="back-btn">
-          ← Back
-        </button>
-        <h1>{position.ticker}</h1>
-        <span className={`position-type-badge ${position.type}`}>
-          {isStockRotation ? 'Stock Rotation' : 'Covered Call'}
-        </span>
-      </div>
+            <div className="metrics-row">
+              <CurrentPricesCard
+                stockTicker={position.ticker}
+                stockPrice={currentPrices?.stockPrice}
+                benchTicker={position.benchmark}
+                benchPrice={currentPrices?.benchPrice}
+                loading={!currentPrices}
+              />
+              <SpreadCard
+                spread={currentSpread}
+                threshold={targetSpread}
+                thresholdLabel={`Exit at ${targetSpread.toFixed(1)}% outperformance`}
+                signalLabel="✓ TARGET HIT"
+                compareGreaterThan={true}
+                loading={!currentPrices}
+              />
+            </div>
 
-      {isStockRotation ? (
-        <StockRotationDetail position={position} />
-      ) : (
-        <CoveredCallDetail position={position} />
-      )}
+            <div className="config-section">
+              <h2>Entry Details</h2>
+              <div className="config-grid">
+                <div className="config-item">
+                  <span className="label">Date</span>
+                  <span className="value">{formatLocalDate(position.entry_date)}</span>
+                </div>
+                <div className="config-item">
+                  <span className="label">Exit Target</span>
+                  <span className="value">{targetSpread.toFixed(1)}% spread</span>
+                </div>
+                <div className="config-item">
+                  <span className="label">{position.ticker} Entry</span>
+                  <span className="value">${position.entry_stock_price.toFixed(2)}</span>
+                </div>
+                <div className="config-item">
+                  <span className="label">{position.benchmark} Entry</span>
+                  <span className="value">${position.entry_bench_price.toFixed(2)}</span>
+                </div>
+              </div>
+            </div>
+          </>
+        ) : (
+          <>
+            <section className="chart-section">
+              <h2>Premium Decay</h2>
+              <PremiumDecayChart position={position} />
+            </section>
 
-      <div className="position-actions">
-        <button className="btn-secondary" onClick={() => alert('Edit not implemented yet')}>
-          Edit
-        </button>
-        <button className="btn-danger" onClick={() => setShowDeleteConfirm(true)}>
-          Delete
-        </button>
-      </div>
+            <div className="metrics-row">
+              <PremiumCard
+                premium={midPrice}
+                threshold={position.alert_target}
+                loading={loadingOption}
+              />
+              <StockAndOptionCard
+                stockPrice={optionData?.stockPrice}
+                bid={optionData?.option?.bid}
+                ask={optionData?.option?.ask}
+                loading={loadingOption}
+              />
+            </div>
+
+            <div className="config-section">
+              <h2>Contract Details</h2>
+              <div className="config-grid">
+                <div className="config-item">
+                  <span className="label">Strike</span>
+                  <span className="value">${position.strike.toFixed(2)}</span>
+                </div>
+                <div className="config-item">
+                  <span className="label">Expiration</span>
+                  <span className="value">{formatLocalDate(position.expiration)}</span>
+                </div>
+                <div className="config-item">
+                  <span className="label">Days Left</span>
+                  <span className="value">{daysToExpiry}</span>
+                </div>
+                <div className="config-item">
+                  <span className="label">Open Interest</span>
+                  <span className="value">
+                    {loadingOption ? '...' : optionData?.option ?
+                      optionData.option.openInterest.toLocaleString() : '—'}
+                  </span>
+                </div>
+                <div className="config-item">
+                  <span className="label">Entry Date</span>
+                  <span className="value">{formatLocalDate(position.entry_date)}</span>
+                </div>
+                <div className="config-item">
+                  <span className="label">Entry Premium</span>
+                  <span className="value">${position.entry_premium.toFixed(2)}</span>
+                </div>
+              </div>
+            </div>
+          </>
+        )}
+      </DetailPageLayout>
 
       <ConfirmDialog
         isOpen={showDeleteConfirm}
@@ -142,223 +293,6 @@ export default function PositionDetail({ user }) {
         onConfirm={handleDelete}
         onCancel={() => setShowDeleteConfirm(false)}
       />
-    </div>
-  );
-}
-
-function StockRotationDetail({ position }) {
-  const [currentPrices, setCurrentPrices] = useState(null);
-
-  // Callback to receive prices from chart component
-  const handlePricesLoaded = (stockPrice, benchPrice) => {
-    setCurrentPrices({ stockPrice, benchPrice });
-  };
-
-  // Calculate current spread
-  const currentSpread = currentPrices ?
-    ((currentPrices.stockPrice - position.entry_stock_price) / position.entry_stock_price * 100) -
-    ((currentPrices.benchPrice - position.entry_bench_price) / position.entry_bench_price * 100)
-    : null;
-
-  const targetSpread = position.exit_threshold * 100;
-  const isAboveTarget = currentSpread !== null && currentSpread >= targetSpread;
-
-  return (
-    <div className="position-content">
-      <section className="chart-section">
-        <h2>Relative Performance</h2>
-        <RelativePerformanceChart position={position} onPricesLoaded={handlePricesLoaded} />
-      </section>
-
-      <div className="position-sidebar">
-        <div className="metrics-card">
-          <h3>Entry</h3>
-          <div className="info-grid">
-            <div className="info-item">
-              <span className="label">Date</span>
-              <span className="value">{formatLocalDate(position.entry_date)}</span>
-            </div>
-            <div className="info-item">
-              <span className="label">{position.ticker}</span>
-              <span className="value">${position.entry_stock_price.toFixed(2)}</span>
-            </div>
-            <div className="info-item">
-              <span className="label">{position.benchmark}</span>
-              <span className="value">${position.entry_bench_price.toFixed(2)}</span>
-            </div>
-          </div>
-        </div>
-
-        <div className="metrics-card">
-          <h3>Target</h3>
-          <div className="info-grid">
-            <div className="info-item">
-              <span className="label">Outperformance</span>
-              <span className="value">{targetSpread.toFixed(1)}%</span>
-            </div>
-          </div>
-        </div>
-
-        <div className="metrics-card">
-          <h3>Current</h3>
-          <div className="info-grid">
-            <div className="info-item">
-              <span className="label">{position.ticker}</span>
-              <span className="value">
-                {currentPrices ? `$${currentPrices.stockPrice.toFixed(2)}` : '—'}
-              </span>
-            </div>
-            <div className="info-item">
-              <span className="label">{position.benchmark}</span>
-              <span className="value">
-                {currentPrices ? `$${currentPrices.benchPrice.toFixed(2)}` : '—'}
-              </span>
-            </div>
-            <div className="info-item">
-              <span className="label">Spread</span>
-              <span className="value" style={{ color: isAboveTarget ? '#10b981' : 'inherit' }}>
-                {currentSpread !== null ? `${currentSpread.toFixed(2)}%` : '—'}
-                {isAboveTarget && ' ✓'}
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function CoveredCallDetail({ position }) {
-  const [optionData, setOptionData] = useState(null);
-  const [loadingOption, setLoadingOption] = useState(true);
-
-  const daysToExpiry = Math.ceil((parseLocalDate(position.expiration) - new Date()) / (1000 * 60 * 60 * 24));
-
-  useEffect(() => {
-    fetchOptionData();
-  }, [position.id]);
-
-  const fetchOptionData = async () => {
-    try {
-      setLoadingOption(true);
-      const data = await fetchOptions(position.ticker);
-
-      // Find the matching call option
-      const calls = data.calls || [];
-
-      // Position expiration is already YYYY-MM-DD string
-      const positionExpDateString = position.expiration;
-
-      const matchingCall = calls.find(call => {
-        // Compare strikes
-        const strikeMatch = call.strike === position.strike;
-
-        // Compare expiration dates in UTC (Yahoo returns Unix timestamp in UTC)
-        const callExpDateString = timestampToUTCDateString(call.expiration);
-        const expMatch = callExpDateString === positionExpDateString;
-
-        return strikeMatch && expMatch;
-      });
-
-      console.log('Matching call:', matchingCall ? `Strike ${matchingCall.strike}, Exp ${timestampToUTCDateString(matchingCall.expiration)}` : 'Not found');
-
-      setOptionData({
-        stockPrice: data.quote?.regularMarketPrice,
-        option: matchingCall
-      });
-    } catch (error) {
-      console.error('Failed to fetch option data:', error);
-    } finally {
-      setLoadingOption(false);
-    }
-  };
-
-  // Calculate mid price
-  const midPrice = optionData?.option ?
-    ((optionData.option.bid + optionData.option.ask) / 2).toFixed(2) : null;
-
-  return (
-    <div className="position-content">
-      <section className="chart-section">
-        <h2>Premium Decay</h2>
-        <PremiumDecayChart position={position} />
-      </section>
-
-      <div className="position-sidebar">
-        <div className="metrics-card">
-          <h3>Contract</h3>
-          <div className="info-grid">
-            <div className="info-item">
-              <span className="label">Strike</span>
-              <span className="value">${position.strike.toFixed(2)}</span>
-            </div>
-            <div className="info-item">
-              <span className="label">Expiration</span>
-              <span className="value">{formatLocalDate(position.expiration)}</span>
-            </div>
-            <div className="info-item">
-              <span className="label">Days Left</span>
-              <span className="value">{daysToExpiry}</span>
-            </div>
-          </div>
-        </div>
-
-        <div className="metrics-card">
-          <h3>Entry</h3>
-          <div className="info-grid">
-            <div className="info-item">
-              <span className="label">Date</span>
-              <span className="value">{formatLocalDate(position.entry_date)}</span>
-            </div>
-            <div className="info-item">
-              <span className="label">Premium</span>
-              <span className="value">${position.entry_premium.toFixed(2)}</span>
-            </div>
-          </div>
-        </div>
-
-        <div className="metrics-card">
-          <h3>Target</h3>
-          <div className="info-grid">
-            <div className="info-item">
-              <span className="label">Alert At</span>
-              <span className="value">${position.alert_target.toFixed(2)}</span>
-            </div>
-          </div>
-        </div>
-
-        <div className="metrics-card">
-          <h3>Current</h3>
-          <div className="info-grid">
-            <div className="info-item">
-              <span className="label">Stock Price</span>
-              <span className="value">
-                {loadingOption ? '...' : optionData?.stockPrice ? `$${optionData.stockPrice.toFixed(2)}` : '—'}
-              </span>
-            </div>
-            <div className="info-item">
-              <span className="label">Mid Price</span>
-              <span className="value">
-                {loadingOption ? '...' : midPrice ? `$${midPrice}` : '—'}
-              </span>
-            </div>
-            <div className="info-item">
-              <span className="label">Bid / Ask</span>
-              <span className="value">
-                {loadingOption ? '...' : optionData?.option ?
-                  `$${optionData.option.bid.toFixed(2)} / $${optionData.option.ask.toFixed(2)}` : '—'}
-              </span>
-            </div>
-            <div className="info-item">
-              <span className="label">Open Interest</span>
-              <span className="value">
-                {loadingOption ? '...' : optionData?.option ?
-                  optionData.option.openInterest.toLocaleString() : '—'}
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+    </>
   );
 }
