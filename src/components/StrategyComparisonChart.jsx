@@ -5,7 +5,7 @@ import { getTodayString } from '../lib/dateUtils';
 import { calculateRelativePerformance } from '../lib/calculations';
 import './Chart.css';
 
-export default function RelativePerformanceChart({ position, onPricesLoaded }) {
+export default function StrategyComparisonChart({ strategy, onDataLoaded }) {
   const chartContainerRef = useRef(null);
   const chartRef = useRef(null);
   const [loading, setLoading] = useState(true);
@@ -21,7 +21,7 @@ export default function RelativePerformanceChart({ position, onPricesLoaded }) {
         chartRef.current = null;
       }
     };
-  }, [position.id]);
+  }, [strategy.id]);
 
   const fetchDataAndRenderChart = async () => {
     try {
@@ -29,42 +29,53 @@ export default function RelativePerformanceChart({ position, onPricesLoaded }) {
       setError(null);
 
       const today = getTodayString();
-      const entryDate = position.entry_date;
 
-      // Fetch both stock and benchmark data in a single API call
+      // Calculate start date based on lookback period
+      const startDate = new Date();
+      startDate.setDate(startDate.getDate() - strategy.lookback_days);
+      const startDateString = startDate.toISOString().split('T')[0];
+
+      // Fetch both stock and benchmark data
       const results = await fetchMultipleHistoricalPrices(
-        [position.ticker, position.benchmark],
-        entryDate,
+        [strategy.ticker, strategy.benchmark],
+        startDateString,
         today
       );
 
-      // results[0] = stock, results[1] = benchmark
-      const stockData = results.find(r => r.symbol === position.ticker);
-      const benchData = results.find(r => r.symbol === position.benchmark);
+      const stockData = results.find(r => r.symbol === strategy.ticker);
+      const benchData = results.find(r => r.symbol === strategy.benchmark);
 
       if (!stockData || !benchData) {
         throw new Error('Failed to fetch price data');
       }
 
-      // Pass current prices to parent if callback provided
-      if (onPricesLoaded) {
-        const currentStockPrice = stockData.meta?.regularMarketPrice;
-        const currentBenchPrice = benchData.meta?.regularMarketPrice;
-        if (currentStockPrice && currentBenchPrice) {
-          onPricesLoaded(currentStockPrice, currentBenchPrice);
-        }
+      // Get current prices
+      const currentStockPrice = stockData.meta?.regularMarketPrice;
+      const currentBenchPrice = benchData.meta?.regularMarketPrice;
+
+      // Calculate current spread (relative performance)
+      let currentSpread = null;
+      if (currentStockPrice && currentBenchPrice && stockData.close.length > 0 && benchData.close.length > 0) {
+        // Use first price as baseline for relative performance
+        const stockStart = stockData.close[0];
+        const benchStart = benchData.close[0];
+
+        const stockReturn = ((currentStockPrice - stockStart) / stockStart) * 100;
+        const benchReturn = ((currentBenchPrice - benchStart) / benchStart) * 100;
+        currentSpread = stockReturn - benchReturn;
       }
 
-      // Calculate relative performance using shared utility
-      const relativePerformance = calculateRelativePerformance(
-        stockData,
-        benchData,
-        position.entry_stock_price,
-        position.entry_bench_price
-      );
+      // Pass data to parent
+      if (onDataLoaded) {
+        onDataLoaded({
+          stockPrice: currentStockPrice,
+          benchPrice: currentBenchPrice,
+          spread: currentSpread
+        });
+      }
 
       // Render chart
-      renderChart(relativePerformance, position.exit_threshold);
+      renderChart(stockData, benchData, strategy);
 
       setLoading(false);
     } catch (err) {
@@ -74,13 +85,25 @@ export default function RelativePerformanceChart({ position, onPricesLoaded }) {
     }
   };
 
-  const renderChart = (data, exitThreshold) => {
+  const renderChart = (stockData, benchData, strategy) => {
     if (!chartContainerRef.current) return;
 
     // Remove existing chart
     if (chartRef.current) {
       chartRef.current.remove();
     }
+
+    // Calculate spread over time using shared utility
+    // Use first prices as baseline (lookback period start)
+    const stockBaseline = stockData.close[0];
+    const benchBaseline = benchData.close[0];
+
+    const spreadData = calculateRelativePerformance(
+      stockData,
+      benchData,
+      stockBaseline,
+      benchBaseline
+    );
 
     // Create new chart
     const chart = LightweightCharts.createChart(chartContainerRef.current, {
@@ -103,27 +126,26 @@ export default function RelativePerformanceChart({ position, onPricesLoaded }) {
       },
     });
 
-    // Add relative performance line
-    const lineSeries = chart.addSeries(LightweightCharts.LineSeries, {
-      color: '#2563eb',
+    // Add spread line (changes color based on if it's above/below threshold)
+    const spreadSeries = chart.addSeries(LightweightCharts.LineSeries, {
+      color: '#2563eb', // Blue
       lineWidth: 2,
       priceFormat: {
         type: 'custom',
         formatter: (price) => `${price.toFixed(2)}%`,
       },
     });
+    spreadSeries.setData(spreadData);
 
-    lineSeries.setData(data);
-
-    // Add exit threshold line (horizontal)
-    const thresholdValue = exitThreshold * 100;
-    const thresholdData = data.map(d => ({
+    // Add entry threshold line (dashed horizontal line)
+    const thresholdValue = strategy.entry_threshold * 100;
+    const thresholdData = spreadData.map(d => ({
       time: d.time,
       value: thresholdValue
     }));
 
     const thresholdSeries = chart.addSeries(LightweightCharts.LineSeries, {
-      color: '#10b981',
+      color: '#10b981', // Green
       lineWidth: 2,
       lineStyle: 2, // Dashed
       priceFormat: {
@@ -131,7 +153,6 @@ export default function RelativePerformanceChart({ position, onPricesLoaded }) {
         formatter: (price) => `${price.toFixed(2)}%`,
       },
     });
-
     thresholdSeries.setData(thresholdData);
 
     // Fit content

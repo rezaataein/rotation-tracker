@@ -1,20 +1,18 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
-import AddPosition from '../components/AddPosition';
 import packageJson from '../../package.json';
 import './Dashboard.css';
 
-export default function Dashboard({ user }) {
+export default function Dashboard({ user, refreshKey }) {
   const navigate = useNavigate();
   const [positions, setPositions] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [showAddModal, setShowAddModal] = useState(false);
   const [filter, setFilter] = useState('all'); // 'all', 'stock_rotation', 'covered_call'
 
   useEffect(() => {
     fetchPositions();
-  }, []);
+  }, [refreshKey]); // Refetch when refreshKey changes
 
   const fetchPositions = async () => {
     try {
@@ -31,10 +29,6 @@ export default function Dashboard({ user }) {
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleSavePosition = (newPosition) => {
-    setPositions([newPosition, ...positions]);
   };
 
   const filteredPositions = positions.filter(position => {
@@ -63,9 +57,7 @@ export default function Dashboard({ user }) {
           <img src={`${import.meta.env.BASE_URL}icons/icon-192.png`} alt="" className="empty-icon" />
           <h2>No Positions Yet</h2>
           <p>Start tracking your stock rotation strategies and covered calls</p>
-          <button className="cta-button" onClick={() => setShowAddModal(true)}>
-            Add Your First Position
-          </button>
+          <p className="empty-hint">Tap the + button to add your first position</p>
         </div>
       ) : (
         <>
@@ -115,18 +107,6 @@ export default function Dashboard({ user }) {
             ))}
           </div>
         </>
-      )}
-
-      <button className="fab" title="Add Position" onClick={() => setShowAddModal(true)}>
-        +
-      </button>
-
-      {showAddModal && (
-        <AddPosition
-          user={user}
-          onClose={() => setShowAddModal(false)}
-          onSave={handleSavePosition}
-        />
       )}
 
       <footer className="dashboard-footer">

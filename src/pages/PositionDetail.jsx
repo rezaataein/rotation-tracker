@@ -5,6 +5,7 @@ import { formatLocalDate, parseLocalDate, timestampToUTCDateString } from '../li
 import { fetchOptions } from '../lib/yahooFinance';
 import RelativePerformanceChart from '../components/RelativePerformanceChart';
 import PremiumDecayChart from '../components/PremiumDecayChart';
+import ConfirmDialog from '../components/ConfirmDialog';
 import './PositionDetail.css';
 
 export default function PositionDetail({ user }) {
@@ -13,6 +14,8 @@ export default function PositionDetail({ user }) {
   const [position, setPosition] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteError, setDeleteError] = useState(null);
 
   useEffect(() => {
     fetchPosition();
@@ -43,10 +46,6 @@ export default function PositionDetail({ user }) {
   };
 
   const handleDelete = async () => {
-    if (!confirm('Are you sure you want to delete this position? This cannot be undone.')) {
-      return;
-    }
-
     try {
       const { error } = await supabase
         .from('positions')
@@ -59,7 +58,8 @@ export default function PositionDetail({ user }) {
       // Navigate back to dashboard
       navigate('/');
     } catch (err) {
-      alert(`Failed to delete: ${err.message}`);
+      setDeleteError(err.message || 'Failed to delete position');
+      setShowDeleteConfirm(false);
     }
   };
 
@@ -92,6 +92,21 @@ export default function PositionDetail({ user }) {
 
   return (
     <div className="position-detail">
+      {deleteError && (
+        <div className="error-banner">
+          <span className="error-icon">⚠️</span>
+          <span>{deleteError}</span>
+          <button
+            type="button"
+            className="close-error-btn"
+            onClick={() => setDeleteError(null)}
+            aria-label="Dismiss error"
+          >
+            ×
+          </button>
+        </div>
+      )}
+
       <div className="position-header">
         <button onClick={() => navigate('/')} className="back-btn">
           ← Back
@@ -112,10 +127,21 @@ export default function PositionDetail({ user }) {
         <button className="btn-secondary" onClick={() => alert('Edit not implemented yet')}>
           Edit
         </button>
-        <button className="btn-danger" onClick={handleDelete}>
+        <button className="btn-danger" onClick={() => setShowDeleteConfirm(true)}>
           Delete
         </button>
       </div>
+
+      <ConfirmDialog
+        isOpen={showDeleteConfirm}
+        title="Delete Position?"
+        message="This will permanently delete this position. This cannot be undone."
+        confirmText="Delete"
+        cancelText="Cancel"
+        variant="danger"
+        onConfirm={handleDelete}
+        onCancel={() => setShowDeleteConfirm(false)}
+      />
     </div>
   );
 }
