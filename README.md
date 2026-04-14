@@ -143,13 +143,18 @@ App checks 3x daily (9am, 12pm, 3pm ET):
 - ✅ PWA support (installable, offline-ready)
 - ✅ Auto-deployment to GitHub Pages
 - ✅ Versioning (package.json + build date)
+- ✅ Position detail views with interactive TradingView charts
+- ✅ Strategy scanner with strategy management (add/edit/delete/activate)
+- ✅ Strategy detail view with performance charts and BUY signal indicators
+- ✅ Shared component architecture (DetailPageLayout, MetricCards)
+- ✅ Professional confirmation dialogs (no browser alerts/confirms)
+- ✅ Consistent refresh pattern across all list views
 
 **In Development:**
-- 🔨 Position detail view with charts
-- 🔨 Strategy scanner
-- 🔨 Settings page
+- 🔨 Settings page (user preferences, notification settings)
 - 🔨 GitHub Actions cron job (price updates + signals)
 - 🔨 Push notifications
+- 🔨 Edit position/strategy functionality
 
 ---
 
