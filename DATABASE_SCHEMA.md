@@ -10,6 +10,7 @@
 2. **strategies** - Saved scanners for auto-monitoring
 3. **push_subscriptions** - Web push endpoints
 4. **notifications** - Notification history (optional)
+5. **option_price_snapshots** - Historical option premium data (for covered calls)
 
 ---
 
@@ -196,7 +197,35 @@ CREATE INDEX idx_notifications_type ON notifications(type);
 
 
 -- ============================================================================
--- 5. ROW-LEVEL SECURITY (RLS)
+-- 5. OPTION PRICE SNAPSHOTS TABLE
+-- ============================================================================
+-- Historical option premium data collected by GitHub Actions cron
+-- Yahoo Finance doesn't provide historical option data, so we collect it ourselves
+
+CREATE TABLE option_price_snapshots (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  position_id UUID NOT NULL REFERENCES positions(id) ON DELETE CASCADE,
+  
+  -- Snapshot data
+  timestamp TIMESTAMPTZ NOT NULL,
+  bid DECIMAL(10, 2) NOT NULL,
+  ask DECIMAL(10, 2) NOT NULL,
+  last_price DECIMAL(10, 2),
+  volume INTEGER,
+  open_interest INTEGER,
+  
+  -- Timestamps
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Indexes
+CREATE INDEX idx_option_snapshots_position_id ON option_price_snapshots(position_id);
+CREATE INDEX idx_option_snapshots_timestamp ON option_price_snapshots(timestamp DESC);
+CREATE INDEX idx_option_snapshots_position_timestamp ON option_price_snapshots(position_id, timestamp DESC);
+
+
+-- ============================================================================
+-- 6. ROW-LEVEL SECURITY (RLS)
 -- ============================================================================
 
 -- Enable RLS on all tables
@@ -204,6 +233,7 @@ ALTER TABLE positions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE strategies ENABLE ROW LEVEL SECURITY;
 ALTER TABLE push_subscriptions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE notifications ENABLE ROW LEVEL SECURITY;
+ALTER TABLE option_price_snapshots ENABLE ROW LEVEL SECURITY;
 
 -- Positions policies
 CREATE POLICY "Users can view own positions"
@@ -257,9 +287,23 @@ CREATE POLICY "Users can view own notifications"
   ON notifications FOR SELECT
   USING (auth.uid() = user_id);
 
+-- Option snapshots policies
+CREATE POLICY "Users can view snapshots for own positions"
+  ON option_price_snapshots FOR SELECT
+  USING (
+    position_id IN (
+      SELECT id FROM positions WHERE user_id = auth.uid()
+    )
+  );
+
+-- Service role can insert snapshots (GitHub Actions cron)
+CREATE POLICY "Service role can insert snapshots"
+  ON option_price_snapshots FOR INSERT
+  WITH CHECK (auth.role() = 'service_role');
+
 
 -- ============================================================================
--- 6. HELPER FUNCTIONS
+-- 7. HELPER FUNCTIONS
 -- ============================================================================
 
 -- Function to calculate days held
@@ -280,7 +324,7 @@ $$ LANGUAGE plpgsql;
 
 
 -- ============================================================================
--- 7. SAMPLE DATA (Optional - for testing)
+-- 8. SAMPLE DATA (Optional - for testing)
 -- ============================================================================
 
 -- Insert sample strategy (replace user_id with your actual user ID)
@@ -320,7 +364,7 @@ VALUES (
 
 
 -- ============================================================================
--- 8. USEFUL QUERIES FOR ADMIN
+-- 9. USEFUL QUERIES FOR ADMIN
 -- ============================================================================
 
 -- View all users and their position counts
