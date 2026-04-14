@@ -2,6 +2,25 @@
 
 All notable changes to Rotation Tracker will be documented in this file.
 
+## [0.3.2] - 2026-04-13
+
+### Added
+- **Supabase Edge Function Source Code** - Added to version control
+  - `supabase/functions/fetch-quotes/index.ts` - Main Edge Function
+  - `supabase/functions/README.md` - Deployment documentation
+  - Ticker validation, historical prices, and options chain fetching
+  - Cookie/crumb authentication for Yahoo Finance options API
+
+### Changed
+- **DATABASE_SCHEMA.md** - Added option_price_snapshots table (from migration 002)
+  - Documents historical option premium collection
+  - RLS policies for user access and service role inserts
+  - Follows industry standard: schema doc = current state after migrations
+
+### Technical
+- Edge function now version controlled for deployment automation
+- Supports `supabase functions deploy fetch-quotes` command
+
 ## [0.3.1] - 2026-04-13
 
 ### Added
