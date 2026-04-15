@@ -2,6 +2,49 @@
 
 All notable changes to Rotation Tracker will be documented in this file.
 
+## [0.6.0] - 2026-04-15
+
+### Added
+- **Position Pause/Resume Functionality** - Matching strategy pattern
+  - Added `active` boolean column to positions table (default TRUE)
+  - Pause/resume toggle button on position cards (⏸️ Pause / ▶️ Activate)
+  - Status badge on position detail pages (Active / Paused)
+  - Paused positions visually grayed out (opacity 0.6, gray background)
+  - Two-row independent filtering on Dashboard:
+    - Row 1: Type filter (All | Stock Rotation | Covered Calls)
+    - Row 2: Status filter (All | Active | Paused)
+  - Both filters work independently for maximum flexibility
+
+### Changed
+- **Backend Monitoring** - Only checks active positions
+  - monitor.py updated to query `.eq('active', True)`
+  - Paused positions skip monitoring completely
+  - No notifications sent for paused positions
+  - Console messages updated: "open" → "active"
+  
+- **Position Creation** - New positions default to active=TRUE
+  - Explicit `active: true` in AddPosition component
+  - Start monitoring immediately after creation
+  
+- **Dashboard Filtering** - Enhanced with dual filters
+  - Renamed `filter` to `typeFilter` for clarity
+  - Added `statusFilter` (all | active | paused)
+  - Combined filtering logic: both filters apply simultaneously
+  - Status filter row styled slightly smaller (secondary filter)
+
+### Technical
+- **Database Migration 003:** `ALTER TABLE positions ADD COLUMN active BOOLEAN DEFAULT TRUE`
+- Created index: `idx_positions_active` for query performance
+- Updated DATABASE_SCHEMA.md with new column
+- Position detail pages now match strategy detail pages (status badge + pause button)
+- CSS matches strategies: `.toggle-button`, `.inactive` card styling
+
+### UX Improvement
+- **Solves notification spam:** Users were getting 15+ notifications/week for same position
+- **User control:** Explicit choice when to monitor (like "I see the signal but waiting for tax reasons")
+- **Consistent pattern:** Positions and strategies now have identical pause/resume UX
+- **Flexible filtering:** Find exactly what you want (e.g., "active covered calls only")
+
 ## [0.5.7] - 2026-04-15
 
 ### Fixed

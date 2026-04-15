@@ -98,6 +98,7 @@ export default function AddPosition({ user, onClose, onSave }) {
         type,
         ticker: tickerToValidate,
         status: 'open',
+        active: true,  // New positions start monitoring immediately
         entry_date: entryDate,
       };
 

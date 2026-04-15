@@ -105,6 +105,22 @@ export default function PositionDetail({ user }) {
     }
   };
 
+  const handleToggleActive = async () => {
+    try {
+      const { error } = await supabase
+        .from('positions')
+        .update({ active: !position.active })
+        .eq('id', id);
+
+      if (error) throw error;
+
+      // Update local state
+      setPosition({ ...position, active: !position.active });
+    } catch (err) {
+      setError(err.message || 'Failed to update position');
+    }
+  };
+
   const handleEditSave = (updatedPosition) => {
     // Update local state with edited position
     setPosition(updatedPosition);
@@ -170,8 +186,8 @@ export default function PositionDetail({ user }) {
       <DetailPageLayout
         title={position.ticker}
         badge={
-          <span className={`position-type-badge ${position.type}`}>
-            {isStockRotation ? 'Stock Rotation' : 'Covered Call'}
+          <span className={`status-badge ${position.active ? 'active' : 'inactive'}`}>
+            {position.active ? 'Active' : 'Paused'}
           </span>
         }
         onBack={() => navigate('/')}
@@ -179,6 +195,9 @@ export default function PositionDetail({ user }) {
         onDismissError={() => setDeleteError(null)}
         actions={
           <>
+            <button className="btn-secondary" onClick={handleToggleActive}>
+              {position.active ? '⏸️ Pause' : '▶️ Activate'}
+            </button>
             <button className="btn-secondary" onClick={() => setShowEditModal(true)}>
               Edit
             </button>

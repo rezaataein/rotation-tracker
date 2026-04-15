@@ -45,6 +45,9 @@ CREATE TABLE positions (
   entry_premium DECIMAL(10, 2),
   alert_target DECIMAL(10, 2),  -- Price to alert at
   
+  -- Status
+  active BOOLEAN DEFAULT TRUE,  -- Pause/resume monitoring (matches strategies table)
+  
   -- Current prices (updated by cron)
   current_stock_price DECIMAL(10, 2),
   current_bench_price DECIMAL(10, 2),
@@ -77,6 +80,7 @@ CREATE TABLE positions (
 -- Indexes
 CREATE INDEX idx_positions_user_id ON positions(user_id);
 CREATE INDEX idx_positions_status ON positions(status);
+CREATE INDEX idx_positions_active ON positions(active);
 CREATE INDEX idx_positions_type ON positions(type);
 CREATE INDEX idx_positions_strategy_id ON positions(strategy_id);
 

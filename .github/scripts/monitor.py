@@ -270,11 +270,11 @@ def check_stock_rotation_positions(supabase: Client, test_mode: bool = False) ->
     print("="*60)
 
     # Fetch open stock rotation positions
-    response = supabase.table('positions').select('*').eq('status', 'open').eq('type', 'stock_rotation').execute()
+    response = supabase.table('positions').select('*').eq('status', 'open').eq('active', True).eq('type', 'stock_rotation').execute()
     positions = response.data
 
     if not positions:
-        print("No open stock rotation positions")
+        print("No active stock rotation positions")
         return []
 
     print(f"Found {len(positions)} open position(s)")
@@ -356,11 +356,11 @@ def check_covered_call_positions(supabase: Client, test_mode: bool = False) -> L
     print("="*60)
 
     # Fetch open covered call positions
-    response = supabase.table('positions').select('*').eq('status', 'open').eq('type', 'covered_call').execute()
+    response = supabase.table('positions').select('*').eq('status', 'open').eq('active', True).eq('type', 'covered_call').execute()
     positions = response.data
 
     if not positions:
-        print("No open covered call positions")
+        print("No active covered call positions")
         return []
 
     print(f"Found {len(positions)} open position(s)")
