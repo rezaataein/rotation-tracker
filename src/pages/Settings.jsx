@@ -8,8 +8,7 @@ import {
   subscribeToPush,
   unsubscribeFromPush,
   saveSubscriptionToDatabase,
-  removeSubscriptionFromDatabase,
-  hasActiveSubscription
+  removeSubscriptionFromDatabase
 } from '../lib/pushNotifications';
 import './Settings.css';
 
@@ -36,9 +35,12 @@ export default function Settings({ user }) {
         return;
       }
 
-      // Check if user has active subscription in database
-      const hasSubscription = await hasActiveSubscription(user.id);
-      setNotificationsEnabled(hasSubscription);
+      // Check if THIS BROWSER has an active subscription (not database!)
+      // Each device/browser needs its own subscription
+      const registration = await navigator.serviceWorker.ready;
+      const subscription = await registration.pushManager.getSubscription();
+
+      setNotificationsEnabled(!!subscription);
 
     } catch (error) {
       console.error('Error checking subscription status:', error);
@@ -194,7 +196,7 @@ export default function Settings({ user }) {
           <h2>About</h2>
           <div className="setting-item">
             <div className="setting-label">Version</div>
-            <div className="setting-value">0.5.3</div>
+            <div className="setting-value">0.5.4</div>
           </div>
           <div className="about-description">
             <p>

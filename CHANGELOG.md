@@ -2,6 +2,17 @@
 
 All notable changes to Rotation Tracker will be documented in this file.
 
+## [0.5.4] - 2026-04-15
+
+### Fixed
+- **Multi-device Notification Toggle UX** - Critical bug fix
+  - Toggle now reflects LOCAL browser subscription status (not database)
+  - Before: Device B showed toggle ON if Device A had subscription (misleading!)
+  - After: Each device shows its own true subscription status
+  - User must explicitly enable on each device (expected behavior)
+  - Prevents false assumption of receiving notifications when not subscribed
+  - Database still stores all subscriptions for multi-device support
+
 ## [0.5.3] - 2026-04-15
 
 ### Changed
