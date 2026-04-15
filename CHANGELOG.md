@@ -2,6 +2,26 @@
 
 All notable changes to Rotation Tracker will be documented in this file.
 
+## [0.5.6] - 2026-04-15
+
+### Changed
+- **Version Display UX** - Following mobile app industry standards
+  - Removed floating footer from all pages (cleaner UI, more screen space)
+  - Version now shown ONLY in Settings → About section (iOS/Android pattern)
+  - Added "Build Date" field to Settings About section
+  - No more duplication (was showing in floating footer + Settings)
+  - More professional mobile app experience
+  
+### Fixed
+- **About Section Accuracy** - Updated deployment platform
+  - Changed "deployed on Vercel" to "deployed on GitHub Pages" (correct)
+
+### Technical
+- Deleted AppFooter.jsx and AppFooter.css components
+- Removed AppFooter import and usage from App.jsx
+- Enhanced Settings About section with build date display
+- Follows industry standard: 95% of mobile apps show version only in Settings
+
 ## [0.5.5] - 2026-04-15
 
 ### Fixed

@@ -190,12 +190,14 @@ npm run build
 
 This project uses **strict per-commit versioning**:
 - Every commit bumps the patch version (0.1.X → 0.1.Y)
-- Version displayed in dashboard footer
+- Version displayed in Settings → About section
 - Commit messages include version (e.g., "v0.1.5 - Fix bug")
 
 **Why:** Easy debugging, deployment tracking, user verification
 
-Current version shown in footer: `v{version} • Built {date}`
+Current version shown in Settings:
+- **Version:** 0.5.6
+- **Build Date:** 2026-04-15
 
 ---
 

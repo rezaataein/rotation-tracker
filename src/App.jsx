@@ -8,7 +8,6 @@ import PositionDetail from './pages/PositionDetail';
 import StrategyDetail from './pages/StrategyDetail';
 import Settings from './pages/Settings';
 import BottomNav from './components/BottomNav';
-import AppFooter from './components/AppFooter';
 import AddPosition from './components/AddPosition';
 import AddStrategy from './components/AddStrategy';
 import './App.css';
@@ -93,9 +92,6 @@ function AppContent({ user }) {
         } />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
-
-      {/* Global footer with version */}
-      <AppFooter />
 
       {/* Centralized FAB - changes behavior based on route */}
       {showFAB && (

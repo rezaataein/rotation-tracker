@@ -474,11 +474,10 @@ Dashboard (authenticated)
   ├─ Filter tabs: All | Stock Rotation | Covered Calls
   ├─ Position cards (filtered list)
   ├─ FAB: + button (opens Add Position modal)
-  ├─ Footer: Version info
   └─ Bottom navigation (3 tabs):
       ├─ 🔍 Scanner
       ├─ 📊 Positions (active)
-      └─ ⚙️ Settings
+      └─ ⚙️ Settings (shows version in About section)
 ```
 
 ### **Navigation Tabs** (Bottom)

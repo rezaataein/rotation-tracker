@@ -196,7 +196,11 @@ export default function Settings({ user }) {
           <h2>About</h2>
           <div className="setting-item">
             <div className="setting-label">Version</div>
-            <div className="setting-value">0.5.5</div>
+            <div className="setting-value">0.5.6</div>
+          </div>
+          <div className="setting-item">
+            <div className="setting-label">Build Date</div>
+            <div className="setting-value">{__BUILD_DATE__}</div>
           </div>
           <div className="about-description">
             <p>
@@ -204,7 +208,7 @@ export default function Settings({ user }) {
               Get automated alerts for entry points, exit thresholds, and buyback opportunities—so you never miss a trade.
             </p>
             <p style={{ marginTop: '1rem', fontSize: '0.875rem', opacity: 0.7 }}>
-              Built with React, Supabase, and deployed on Vercel.
+              Built with React, Supabase, and deployed on GitHub Pages.
             </p>
           </div>
         </section>
