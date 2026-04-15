@@ -1,3 +1,4 @@
 # Python dependencies for monitor.py
 yfinance>=0.2.40
 supabase>=2.0.0
+pywebpush>=1.14.0

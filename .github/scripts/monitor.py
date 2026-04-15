@@ -23,6 +23,7 @@ from datetime import datetime, timedelta, date
 from typing import List, Dict, Optional
 import yfinance as yf
 from supabase import create_client, Client
+from pywebpush import webpush, WebPushException
 
 
 # ============================================================================
@@ -32,6 +33,12 @@ from supabase import create_client, Client
 # Supabase connection (uses environment variables)
 SUPABASE_URL = os.getenv('SUPABASE_URL')
 SUPABASE_SERVICE_KEY = os.getenv('SUPABASE_SERVICE_KEY')  # Service role key (bypasses RLS)
+
+# VAPID keys for web push (uses environment variables)
+VAPID_PUBLIC_KEY = os.getenv('VAPID_PUBLIC_KEY')
+VAPID_PRIVATE_KEY = os.getenv('VAPID_PRIVATE_KEY')
+VAPID_CLAIMS_EMAIL = os.getenv('VAPID_CLAIMS_EMAIL')
+VAPID_CLAIMS = {"sub": f"mailto:{VAPID_CLAIMS_EMAIL}"}  # Contact email for push service
 
 # Notification types
 NOTIFICATION_TYPES = {
@@ -52,6 +59,13 @@ def get_supabase_client() -> Client:
         raise ValueError("SUPABASE_URL and SUPABASE_SERVICE_KEY must be set in environment")
 
     return create_client(SUPABASE_URL, SUPABASE_SERVICE_KEY)
+
+
+def validate_vapid_config():
+    """Validate VAPID configuration for web push"""
+    if not VAPID_PUBLIC_KEY or not VAPID_PRIVATE_KEY or not VAPID_CLAIMS_EMAIL:
+        raise ValueError("VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, and VAPID_CLAIMS_EMAIL must be set in environment")
+    return True
 
 
 # ============================================================================
@@ -179,6 +193,7 @@ def check_strategy_signals(supabase: Client, test_mode: bool = False) -> List[Di
 
     for strategy in strategies:
         strategy_id = strategy['id']
+        user_id = strategy['user_id']
         name = strategy['name']
         ticker = strategy['ticker']
         benchmark = strategy['benchmark']
@@ -214,6 +229,7 @@ def check_strategy_signals(supabase: Client, test_mode: bool = False) -> List[Di
 
             signal = {
                 'type': 'BUY',
+                'user_id': user_id,
                 'strategy_id': strategy_id,
                 'strategy_name': name,
                 'ticker': ticker,
@@ -267,6 +283,7 @@ def check_stock_rotation_positions(supabase: Client, test_mode: bool = False) ->
 
     for pos in positions:
         position_id = pos['id']
+        user_id = pos['user_id']
         ticker = pos['ticker']
         benchmark = pos['benchmark']
         entry_stock_price = float(pos['entry_stock_price'])
@@ -315,6 +332,7 @@ def check_stock_rotation_positions(supabase: Client, test_mode: bool = False) ->
 
             signal = {
                 'type': 'SELL',
+                'user_id': user_id,
                 'position_id': position_id,
                 'ticker': ticker,
                 'benchmark': benchmark,
@@ -351,6 +369,7 @@ def check_covered_call_positions(supabase: Client, test_mode: bool = False) -> L
 
     for pos in positions:
         position_id = pos['id']
+        user_id = pos['user_id']
         ticker = pos['ticker']
         strike = float(pos['strike'])
         expiration = datetime.strptime(pos['expiration'], '%Y-%m-%d').date()
@@ -432,6 +451,7 @@ def check_covered_call_positions(supabase: Client, test_mode: bool = False) -> L
 
             signal = {
                 'type': 'OPTION_ALERT',
+                'user_id': user_id,
                 'position_id': position_id,
                 'ticker': ticker,
                 'strike': strike,
@@ -453,37 +473,125 @@ def check_covered_call_positions(supabase: Client, test_mode: bool = False) -> L
 # NOTIFICATION SYSTEM
 # ============================================================================
 
-def send_notification(signal: Dict, test_mode: bool = False):
-    """Send push notification (fake in test mode)"""
+def send_notification(supabase: Client, signal: Dict, test_mode: bool = False):
+    """Send push notification to user's subscribed devices"""
     signal_type = signal['type']
+    user_id = signal['user_id']
 
+    # Build notification content
     if signal_type == 'BUY':
-        title = f"🟢 BUY Signal: {signal['ticker']}"
-        body = f"{signal['ticker']} is {signal['relative_performance']*100:.2f}% vs {signal['benchmark']} - Ready to enter"
+        title = f"🟢 Entry Signal: {signal['ticker']}"
+        body = f"{signal['ticker']} underperforming {signal['benchmark']} by {abs(signal['relative_performance']*100):.1f}% - Ready to enter position"
+        tag = f"strategy-{signal['strategy_id']}"
+        url = f"/scanner/{signal['strategy_id']}"
 
     elif signal_type == 'SELL':
-        title = f"🔴 SELL Signal: {signal['ticker']}"
-        body = f"{signal['ticker']} is {signal['current_outperformance']*100:+.2f}% vs {signal['benchmark']} after {signal['days_held']} days - Ready to exit"
+        title = f"🔄 Swap Signal: {signal['ticker']}"
+        body = f"{signal['ticker']} outperforming {signal['benchmark']} by {signal['current_outperformance']*100:+.1f}% - Ready to rotate back"
+        tag = f"position-{signal['position_id']}"
+        url = f"/position/{signal['position_id']}"
 
     elif signal_type == 'OPTION_ALERT':
-        title = f"📞 Option Alert: {signal['ticker']}"
-        body = f"${signal['strike']} call bid=${signal['bid']:.2f} (P&L: {signal['pnl_pct']:+.1f}%) - {signal['days_to_exp']}d to exp"
+        title = f"💰 Buyback Alert: {signal['ticker']}"
+        body = f"${signal['strike']} call at ${signal['bid']:.2f} (P&L: {signal['pnl_pct']:+.1f}%) - {signal['days_to_exp']}d to exp"
+        tag = f"position-{signal['position_id']}"
+        url = f"/position/{signal['position_id']}"
 
     else:
         title = f"Info: {signal.get('ticker', 'Unknown')}"
         body = "General notification"
+        tag = "general"
+        url = "/"
+
+    # Prepare notification payload
+    notification_payload = {
+        "title": title,
+        "body": body,
+        "icon": "/icon-192.png",
+        "badge": "/badge-72.png",
+        "tag": tag,
+        "data": {
+            "url": url,
+            "signal": signal
+        }
+    }
 
     if test_mode:
         print(f"\n📱 FAKE NOTIFICATION:")
         print(f"   Title: {title}")
         print(f"   Body: {body}")
+        print(f"   URL: {url}")
         print(f"   Data: {json.dumps(signal, indent=2, default=str)}")
-    else:
-        # TODO: Implement Web Push API
-        # For now, just log
-        print(f"\n📱 NOTIFICATION SENT:")
-        print(f"   {title}")
-        print(f"   {body}")
+        return
+
+    # Validate VAPID configuration
+    try:
+        validate_vapid_config()
+    except ValueError as e:
+        print(f"\n❌ VAPID configuration error: {e}")
+        return
+
+    # Fetch user's push subscriptions
+    try:
+        response = supabase.table('push_subscriptions').select('*').eq('user_id', user_id).execute()
+        subscriptions = response.data
+
+        if not subscriptions:
+            print(f"\n⚠️  No push subscriptions found for user {user_id}")
+            return
+
+        print(f"\n📱 SENDING NOTIFICATION to {len(subscriptions)} device(s)")
+        print(f"   Title: {title}")
+        print(f"   Body: {body}")
+
+        # Send to each subscription
+        sent_count = 0
+        failed_count = 0
+
+        for sub in subscriptions:
+            try:
+                # Send web push
+                webpush(
+                    subscription_info={
+                        "endpoint": sub['endpoint'],
+                        "keys": {
+                            "p256dh": sub['p256dh'],
+                            "auth": sub['auth']
+                        }
+                    },
+                    data=json.dumps(notification_payload),
+                    vapid_private_key=VAPID_PRIVATE_KEY,
+                    vapid_claims=VAPID_CLAIMS
+                )
+                sent_count += 1
+                print(f"   ✅ Sent to device {sub['id'][:8]}...")
+
+            except WebPushException as e:
+                failed_count += 1
+                print(f"   ❌ Failed to send to device {sub['id'][:8]}...: {e}")
+
+                # Remove invalid subscription (expired/unsubscribed)
+                if e.response and e.response.status_code in [404, 410]:
+                    supabase.table('push_subscriptions').delete().eq('id', sub['id']).execute()
+                    print(f"   🗑️  Removed invalid subscription")
+
+        print(f"   📊 Sent: {sent_count}, Failed: {failed_count}")
+
+        # Save notification to history
+        try:
+            supabase.table('notifications').insert({
+                'user_id': user_id,
+                'type': signal_type,
+                'title': title,
+                'body': body,
+                'data': signal,
+                'sent_at': datetime.now().isoformat()
+            }).execute()
+        except Exception as e:
+            print(f"   ⚠️  Failed to save notification history: {e}")
+
+    except Exception as e:
+        print(f"\n❌ ERROR sending notification: {e}")
 
 
 # ============================================================================
@@ -532,7 +640,7 @@ def main():
         print("="*60)
 
         for signal in all_signals:
-            send_notification(signal, test_mode)
+            send_notification(supabase, signal, test_mode)
     else:
         print("\n" + "="*60)
         print("✅ No signals triggered")

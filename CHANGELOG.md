@@ -2,6 +2,36 @@
 
 All notable changes to Rotation Tracker will be documented in this file.
 
+## [0.4.0] - 2026-04-15
+
+### Added
+- **Web Push Notifications - Backend Implementation**
+  - Added `pywebpush` library to requirements.txt
+  - VAPID keys configuration via environment variables
+  - Real web push sending in monitor.py (replaces fake notifications)
+  - Fetches user push subscriptions from database
+  - Sends notifications to all subscribed devices
+  - Removes invalid/expired subscriptions automatically
+  - Saves notification history to database
+  - Validates VAPID configuration on startup
+
+### Changed
+- **monitor.py Signals** - All signals now include `user_id`
+  - Entry signals (strategies)
+  - Swap signals (stock rotation positions)
+  - Buyback alerts (covered call positions)
+  
+- **Notification Content** - Updated terminology
+  - Entry Signal: "Ready to enter position"
+  - Swap Signal: "Ready to rotate back"
+  - Buyback Alert: "Early close opportunity"
+
+### Technical
+- VAPID keys stored in GitHub Secrets (PUBLIC_KEY, PRIVATE_KEY, CLAIMS_EMAIL)
+- Web push sends to browser's native push service (free, no third-party)
+- Handles WebPushException for invalid subscriptions (410, 404)
+- Database tables (push_subscriptions, notifications) still need creation
+
 ## [0.3.4] - 2026-04-15
 
 ### Fixed
