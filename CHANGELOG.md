@@ -2,6 +2,19 @@
 
 All notable changes to Rotation Tracker will be documented in this file.
 
+## [0.5.1] - 2026-04-15
+
+### Fixed
+- **Service Worker Build Error** - Added Workbox manifest placeholder
+  - Added `self.__WB_MANIFEST` placeholder required by vite-plugin-pwa
+  - Updated install event to precache manifest files
+  - Fixed build error: "Unable to find a place to inject the manifest"
+  
+### Changed
+- **.env.example** - Removed VAPID private key and claims email
+  - Only shows VAPID_PUBLIC_KEY (frontend-safe)
+  - Private key and email documented as GitHub Secrets only
+
 ## [0.5.0] - 2026-04-15
 
 ### Added
