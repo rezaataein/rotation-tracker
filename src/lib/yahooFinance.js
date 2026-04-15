@@ -133,15 +133,23 @@ export async function fetchMultipleHistoricalPrices(tickers, startDate, endDate)
 /**
  * Fetch options data for a ticker
  * @param {string} ticker - Ticker symbol
+ * @param {string} [expirationDate] - Optional expiration date filter (YYYY-MM-DD)
  * @returns {Promise<Object>} - Options chain data (quote, calls, puts, expirations)
  */
-export async function fetchOptions(ticker) {
+export async function fetchOptions(ticker, expirationDate = null) {
   try {
+    const body = {
+      symbols: [ticker],
+      fetchOptions: true
+    };
+
+    // Add expiration filter if provided
+    if (expirationDate) {
+      body.expirationDate = expirationDate;
+    }
+
     const { data, error } = await supabase.functions.invoke('fetch-quotes', {
-      body: {
-        symbols: [ticker],
-        fetchOptions: true
-      }
+      body
     });
 
     if (error) {

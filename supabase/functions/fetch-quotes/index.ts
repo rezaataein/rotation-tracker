@@ -26,7 +26,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { symbols, fetchPrices = false, fetchOptions = false, startDate, endDate, interval = '1d' } = await req.json();
+    const { symbols, fetchPrices = false, fetchOptions = false, startDate, endDate, interval = '1d', expirationDate } = await req.json();
 
     if (!symbols || !Array.isArray(symbols) || symbols.length === 0) {
       return new Response(
@@ -99,7 +99,14 @@ Deno.serve(async (req) => {
     const fetchPromises = symbols.map(async (symbol) => {
       try {
         if (fetchOptions) {
-          const yahooUrl = `https://query2.finance.yahoo.com/v7/finance/options/${symbol}?crumb=${crumb}`;
+          // Build options URL with optional expiration date filter
+          let yahooUrl = `https://query2.finance.yahoo.com/v7/finance/options/${symbol}?crumb=${crumb}`;
+
+          // If expirationDate provided (YYYY-MM-DD), add date filter to get only that expiration
+          if (expirationDate) {
+            const expirationTimestamp = Math.floor(Date.parse(expirationDate + 'T00:00:00Z') / 1000);
+            yahooUrl += `&date=${expirationTimestamp}`;
+          }
 
           const response = await fetch(yahooUrl, {
             headers: {

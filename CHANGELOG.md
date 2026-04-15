@@ -2,6 +2,31 @@
 
 All notable changes to Rotation Tracker will be documented in this file.
 
+## [0.3.4] - 2026-04-15
+
+### Fixed
+- **Covered Call Option Data** - Now correctly displays bid/ask and premium
+  - Edge function accepts optional `expirationDate` parameter (YYYY-MM-DD)
+  - Filters Yahoo Finance options API to specific expiration date only
+  - Reduces data transfer and ensures exact option matching
+  - PositionDetail now passes position.expiration to filter options
+  - Simplified matching logic (no need to check expiration - already filtered)
+
+### Changed
+- **Edge Function API** - Added `expirationDate` optional parameter
+  - When provided, adds `&date=UNIX_TIMESTAMP` to Yahoo options URL
+  - Returns only options for that specific expiration (not all expirations)
+  - More efficient: less data transfer, faster matching
+  
+- **fetchOptions()** - Now accepts optional `expirationDate` parameter
+  - `fetchOptions(ticker, expirationDate)` - second param optional
+  - Passes to Edge function for filtering
+
+### Technical
+- Updated `supabase/functions/fetch-quotes/index.ts` (requires manual deployment)
+- Updated `supabase/functions/README.md` with new parameter documentation
+- Created memory file: Edge function deployment workflow reminder
+
 ## [0.3.3] - 2026-04-14
 
 ### Added

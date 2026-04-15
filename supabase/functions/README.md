@@ -16,6 +16,7 @@ Fetches stock quotes, historical prices, and options data from Yahoo Finance.
   "symbols": ["AAPL", "MSFT"],
   "fetchPrices": false,
   "fetchOptions": false,
+  "expirationDate": "2024-12-20",
   "startDate": "2024-01-01",
   "endDate": "2024-12-31",
   "interval": "1d"
@@ -26,6 +27,7 @@ Fetches stock quotes, historical prices, and options data from Yahoo Finance.
 - **Validation only** (default): Check if tickers exist
 - **Historical prices** (`fetchPrices: true`): OHLCV data with date range
 - **Options data** (`fetchOptions: true`): Calls, puts, strikes, expirations
+  - Optional: `expirationDate` (YYYY-MM-DD) - Filter to specific expiration date only
 
 **Response:**
 ```json

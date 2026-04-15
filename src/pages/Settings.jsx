@@ -103,7 +103,7 @@ export default function Settings({ user }) {
           <h2>About</h2>
           <div className="setting-item">
             <div className="setting-label">Version</div>
-            <div className="setting-value">0.3.3</div>
+            <div className="setting-value">0.3.4</div>
           </div>
           <div className="about-description">
             <p>

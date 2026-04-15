@@ -65,19 +65,16 @@ export default function PositionDetail({ user }) {
   const fetchOptionData = async () => {
     try {
       setLoadingOption(true);
-      const data = await fetchOptions(position.ticker);
+
+      // Pass expiration date to filter to only the options we need
+      const data = await fetchOptions(position.ticker, position.expiration);
 
       const calls = data.calls || [];
-      const positionExpDateString = position.expiration;
 
-      const matchingCall = calls.find(call => {
-        const strikeMatch = call.strike === position.strike;
-        const callExpDateString = timestampToUTCDateString(call.expiration);
-        const expMatch = callExpDateString === positionExpDateString;
-        return strikeMatch && expMatch;
-      });
+      // Find the exact strike we're looking for (should be in the filtered results)
+      const matchingCall = calls.find(call => call.strike === position.strike);
 
-      console.log('Matching call:', matchingCall ? `Strike ${matchingCall.strike}, Exp ${timestampToUTCDateString(matchingCall.expiration)}` : 'Not found');
+      console.log('Matching call:', matchingCall ? `Strike ${matchingCall.strike}, Bid ${matchingCall.bid}, Ask ${matchingCall.ask}` : 'Not found');
 
       setOptionData({
         stockPrice: data.quote?.regularMarketPrice,
