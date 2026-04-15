@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Rotation Tracker</title>
+    <script>
+      // GitHub Pages SPA redirect workaround
+      // When a user navigates directly to /rotation-tracker/scanner (or refreshes),
+      // GitHub Pages serves this 404.html. We redirect back to index.html with the
+      // path stored, so React Router can handle it.
+
+      // Get the current path (e.g., /rotation-tracker/scanner)
+      const path = window.location.pathname;
+
+      // Store it in sessionStorage
+      sessionStorage.setItem('redirect', path);
+
+      // Redirect to the base URL
+      window.location.replace('/rotation-tracker/');
+    </script>
+  </head>
+  <body>
+    <!-- This page should redirect immediately -->
+  </body>
+</html>

@@ -78,7 +78,7 @@ self.addEventListener('push', (event) => {
 
 // Notification click - open app to relevant page
 self.addEventListener('notificationclick', (event) => {
-  console.log('[SW] Notification clicked:', event.notification);
+  console.log('[SW] Notification clicked');
 
   event.notification.close();
 
@@ -87,17 +87,28 @@ self.addEventListener('notificationclick', (event) => {
 
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
-      // Check if app is already open
-      for (const client of clientList) {
-        if (client.url === fullUrl && 'focus' in client) {
-          return client.focus();
-        }
-      }
-
-      // Open new window if not already open
-      if (clients.openWindow) {
+      // If no clients are open, open a new window
+      if (clientList.length === 0) {
+        console.log('[SW] No clients open, opening new window');
         return clients.openWindow(fullUrl);
       }
+
+      // Prefer visible clients (PWA or browser tab that's currently visible)
+      let targetClient = clientList.find(client => client.visibilityState === 'visible');
+
+      // If no visible client, use the first client (could be minimized PWA or background tab)
+      if (!targetClient) {
+        console.log('[SW] No visible client, using first available client');
+        targetClient = clientList[0];
+      } else {
+        console.log('[SW] Found visible client, using it');
+      }
+
+      // Focus the client and navigate to the target URL
+      return targetClient.focus().then(() => {
+        console.log('[SW] Client focused, navigating to:', urlToOpen);
+        return targetClient.navigate(fullUrl);
+      });
     })
   );
 });

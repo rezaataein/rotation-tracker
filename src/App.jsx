@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from './hooks/useAuth';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
@@ -8,16 +8,31 @@ import PositionDetail from './pages/PositionDetail';
 import StrategyDetail from './pages/StrategyDetail';
 import Settings from './pages/Settings';
 import BottomNav from './components/BottomNav';
+import AppFooter from './components/AppFooter';
 import AddPosition from './components/AddPosition';
 import AddStrategy from './components/AddStrategy';
 import './App.css';
 
 function AppContent({ user }) {
   const location = useLocation();
+  const navigate = useNavigate();
   const [showAddPosition, setShowAddPosition] = useState(false);
   const [showAddStrategy, setShowAddStrategy] = useState(false);
   const [positionsRefreshKey, setPositionsRefreshKey] = useState(0);
   const [strategiesRefreshKey, setStrategiesRefreshKey] = useState(0);
+
+  // Handle 404 redirect from GitHub Pages
+  useEffect(() => {
+    const redirect = sessionStorage.getItem('redirect');
+    if (redirect) {
+      sessionStorage.removeItem('redirect');
+      // Extract the path after /rotation-tracker/
+      const path = redirect.replace('/rotation-tracker', '');
+      if (path && path !== '/') {
+        navigate(path, { replace: true });
+      }
+    }
+  }, [navigate]);
 
   const handleSavePosition = (newPosition) => {
     setPositionsRefreshKey(prev => prev + 1); // Trigger Dashboard to refetch
@@ -78,6 +93,9 @@ function AppContent({ user }) {
         } />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+
+      {/* Global footer with version */}
+      <AppFooter />
 
       {/* Centralized FAB - changes behavior based on route */}
       {showFAB && (

@@ -2,6 +2,28 @@
 
 All notable changes to Rotation Tracker will be documented in this file.
 
+## [0.5.5] - 2026-04-15
+
+### Fixed
+- **Version Footer Display** - Now visible on all pages
+  - Created shared AppFooter component
+  - Shows "v{version} • Built {date}" consistently across app
+  - Positioned above bottom nav on all pages (Dashboard, Scanner, Settings, Position/Strategy details)
+  - Removed duplicate footer from Dashboard.jsx
+  
+- **Page Refresh 404 Error** - Fixed GitHub Pages SPA routing issue
+  - Created 404.html to handle direct navigation/refresh on non-home routes
+  - Added redirect logic using sessionStorage to preserve path
+  - App now correctly navigates to intended page after redirect
+  - Fixes issue where refreshing on /scanner or /position/:id showed 404
+  
+- **Notification Click Behavior** - Improved PWA/browser tab handling
+  - Prioritizes visible clients (PWA or browser tab currently in view)
+  - Uses client.navigate() instead of openWindow() when client exists
+  - Focuses existing app and navigates to notification target page
+  - Better UX: reuses existing app window instead of opening new tabs
+  - Still opens new window if no client is running (can't auto-launch PWA)
+
 ## [0.5.4] - 2026-04-15
 
 ### Fixed

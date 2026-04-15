@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
-import packageJson from '../../package.json';
 import './Dashboard.css';
 
 export default function Dashboard({ user, refreshKey }) {
@@ -108,10 +107,6 @@ export default function Dashboard({ user, refreshKey }) {
           </div>
         </>
       )}
-
-      <footer className="dashboard-footer">
-        v{packageJson.version} • Built {__BUILD_DATE__}
-      </footer>
     </div>
   );
 }
