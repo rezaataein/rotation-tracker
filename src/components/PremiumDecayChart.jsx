@@ -20,7 +20,7 @@ export default function PremiumDecayChart({ position }) {
         chartRef.current = null;
       }
     };
-  }, [position.id]);
+  }, [position.id, position.alert_target]);
 
   const fetchAndRenderChart = async () => {
     try {

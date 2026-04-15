@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import ConfirmDialog from '../components/ConfirmDialog';
+import EditStrategy from '../components/EditStrategy';
 import StrategyComparisonChart from '../components/StrategyComparisonChart';
 import DetailPageLayout from '../components/DetailPageLayout';
 import { CurrentPricesCard, SpreadCard } from '../components/MetricCards';
@@ -16,6 +17,7 @@ export default function StrategyDetail({ user }) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteError, setDeleteError] = useState(null);
   const [chartData, setChartData] = useState(null);
+  const [showEditModal, setShowEditModal] = useState(false);
 
   useEffect(() => {
     fetchStrategy();
@@ -59,6 +61,11 @@ export default function StrategyDetail({ user }) {
       setDeleteError(err.message || 'Failed to delete strategy');
       setShowDeleteConfirm(false);
     }
+  };
+
+  const handleEditSave = (updatedStrategy) => {
+    // Update local state with edited strategy
+    setStrategy(updatedStrategy);
   };
 
   const handleToggleActive = async () => {
@@ -133,7 +140,7 @@ export default function StrategyDetail({ user }) {
             <button className="btn-secondary" onClick={handleToggleActive}>
               {strategy.active ? '⏸️ Pause' : '▶️ Activate'}
             </button>
-            <button className="btn-secondary" onClick={() => alert('Edit not implemented yet')}>
+            <button className="btn-secondary" onClick={() => setShowEditModal(true)}>
               Edit
             </button>
             <button className="btn-danger" onClick={() => setShowDeleteConfirm(true)}>
@@ -201,12 +208,37 @@ export default function StrategyDetail({ user }) {
           </div>
         )}
 
-        <div className="info-note">
+        <div
+          className="info-note"
+          style={{ backgroundColor: strategy.active ? '#e8f5e9' : '#f5f5f5' }}
+        >
           <strong>How it works:</strong><br />
-          Automated checks run 3 times daily during market hours (9:30am, 12:30pm, 3:30pm ET).
-          You'll receive a BUY signal notification when {strategy.ticker} underperforms {strategy.benchmark} by {(Math.abs(strategy.entry_threshold) * 100).toFixed(1)}% over the past {strategy.lookback_days} days.
+          {strategy.active ? (
+            <>
+              ⏰ Automated checks run 3 times daily during market hours (9:30am, 12:30pm, 3:30pm ET).
+              <br /><br />
+              You'll receive alerts when:
+              <ul style={{ marginTop: '0.5rem', marginBottom: 0, paddingLeft: '1.25rem' }}>
+                <li><strong>Entry signal:</strong> {strategy.ticker} underperforms {strategy.benchmark} by {(Math.abs(strategy.entry_threshold) * 100).toFixed(1)}% (time to enter position)</li>
+                <li><strong>Swap signal:</strong> Your position outperforms by exit threshold (time to rotate back)</li>
+              </ul>
+            </>
+          ) : (
+            <>
+              ⏸️ Strategy paused - No automated checks running. Click Activate to resume monitoring for entry and swap signals.
+            </>
+          )}
         </div>
       </DetailPageLayout>
+
+      {showEditModal && (
+        <EditStrategy
+          user={user}
+          strategy={strategy}
+          onClose={() => setShowEditModal(false)}
+          onSave={handleEditSave}
+        />
+      )}
 
       <ConfirmDialog
         isOpen={showDeleteConfirm}

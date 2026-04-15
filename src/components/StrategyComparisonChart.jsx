@@ -21,7 +21,7 @@ export default function StrategyComparisonChart({ strategy, onDataLoaded }) {
         chartRef.current = null;
       }
     };
-  }, [strategy.id]);
+  }, [strategy.id, strategy.lookback_days, strategy.entry_threshold]);
 
   const fetchDataAndRenderChart = async () => {
     try {

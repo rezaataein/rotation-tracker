@@ -6,7 +6,7 @@
 
 ## 🗄️ **Tables Overview**
 
-1. **positions** - Active and closed positions
+1. **positions** - Active positions (hard deleted when closed)
 2. **strategies** - Saved scanners for auto-monitoring
 3. **push_subscriptions** - Web push endpoints
 4. **notifications** - Notification history (optional)
@@ -31,7 +31,7 @@ CREATE TABLE positions (
   -- Position metadata
   type TEXT NOT NULL CHECK (type IN ('stock_rotation', 'covered_call')),
   ticker TEXT NOT NULL,
-  status TEXT DEFAULT 'open' CHECK (status IN ('open', 'closed')),
+  status TEXT DEFAULT 'open' CHECK (status = 'open'),  -- Only 'open' - positions are hard deleted when closed
   
   -- Stock rotation fields
   benchmark TEXT,

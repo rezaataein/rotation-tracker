@@ -2,6 +2,51 @@
 
 All notable changes to Rotation Tracker will be documented in this file.
 
+## [0.3.3] - 2026-04-14
+
+### Added
+- **Settings Page** - Complete user settings interface
+  - User profile section (email, user ID)
+  - Trading signal alerts toggle (placeholder for Phase 4 web push)
+  - Sign out functionality
+  - About section with app version and description
+  - Mobile-responsive design with toggle switch component
+  
+- **Position Detail "How it works" Sections**
+  - Stock Rotation: Explains SWAP alerts when exit threshold is hit
+  - Covered Call: Explains BUYBACK alerts when premium drops to target
+  - Green background styling for active monitoring status
+
+### Changed
+- **Signal Terminology Throughout App** - Clarified and standardized alert types
+  - Stock rotation entry: "Entry signal" (when ticker underperforms benchmark)
+  - Stock rotation exit: "SWAP signal" (when position hits exit threshold - time to rotate back)
+  - Covered call: "BUYBACK alert" (when premium drops to buyback target)
+  - Updated all UI text, documentation, and examples to use consistent terminology
+  
+- **StrategyDetail "How it works"** - Expanded to explain both signal types
+  - Active strategies: Lists entry and swap signals in bulleted format
+  - Paused strategies: Simplified message about resuming monitoring
+  
+- **Settings Notifications Section** - Comprehensive signal coverage
+  - Label: "Trading Signal Alerts" (not just BUY signals)
+  - Description: Covers all three alert types (entry, swap, buyback)
+  - Coming Soon note: Lists all signal types with explanations
+
+### Fixed
+- **DATABASE_SCHEMA.md** - Removed 'closed' status
+  - Positions are hard deleted (not soft deleted/archived)
+  - Status check now: `CHECK (status = 'open')` (was incorrectly `CHECK (status IN ('open', 'closed'))`)
+  - Added comment: "Only 'open' - positions are hard deleted when closed"
+
+### Technical
+- Updated all documentation files:
+  - README.md: Signal terminology, push notification examples, feature status
+  - ARCHITECTURE.md: Notification payload examples, alert descriptions
+  - DATABASE_SCHEMA.md: Position status constraint, table overview
+  - .dev/PROJECT_SUMMARY.md: Signal references throughout
+- Version displayed in Settings page About section
+
 ## [0.3.2] - 2026-04-13
 
 ### Added

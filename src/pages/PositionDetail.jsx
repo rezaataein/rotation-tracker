@@ -6,6 +6,7 @@ import { fetchOptions } from '../lib/yahooFinance';
 import RelativePerformanceChart from '../components/RelativePerformanceChart';
 import PremiumDecayChart from '../components/PremiumDecayChart';
 import ConfirmDialog from '../components/ConfirmDialog';
+import EditPosition from '../components/EditPosition';
 import DetailPageLayout from '../components/DetailPageLayout';
 import { CurrentPricesCard, SpreadCard, PremiumCard, StockAndOptionCard } from '../components/MetricCards';
 import '../styles/DetailContent.css';
@@ -18,6 +19,7 @@ export default function PositionDetail({ user }) {
   const [error, setError] = useState(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteError, setDeleteError] = useState(null);
+  const [showEditModal, setShowEditModal] = useState(false);
 
   // Stock Rotation state
   const [currentPrices, setCurrentPrices] = useState(null);
@@ -106,6 +108,16 @@ export default function PositionDetail({ user }) {
     }
   };
 
+  const handleEditSave = (updatedPosition) => {
+    // Update local state with edited position
+    setPosition(updatedPosition);
+
+    // Refresh option data if covered call
+    if (updatedPosition.type === 'covered_call') {
+      fetchOptionData();
+    }
+  };
+
   if (loading) {
     return (
       <DetailPageLayout
@@ -170,7 +182,7 @@ export default function PositionDetail({ user }) {
         onDismissError={() => setDeleteError(null)}
         actions={
           <>
-            <button className="btn-secondary" onClick={() => alert('Edit not implemented yet')}>
+            <button className="btn-secondary" onClick={() => setShowEditModal(true)}>
               Edit
             </button>
             <button className="btn-danger" onClick={() => setShowDeleteConfirm(true)}>
@@ -224,6 +236,12 @@ export default function PositionDetail({ user }) {
                   <span className="value">${position.entry_bench_price.toFixed(2)}</span>
                 </div>
               </div>
+            </div>
+
+            <div className="info-note" style={{ backgroundColor: '#e8f5e9', marginTop: '1.5rem' }}>
+              <strong>How it works:</strong><br />
+              ⏰ Automated checks run 3 times daily during market hours (9:30am, 12:30pm, 3:30pm ET).
+              You'll receive a SWAP alert when this position outperforms {position.benchmark} by {targetSpread.toFixed(1)}% (time to rotate back to benchmark).
             </div>
           </>
         ) : (
@@ -279,9 +297,24 @@ export default function PositionDetail({ user }) {
                 </div>
               </div>
             </div>
+
+            <div className="info-note" style={{ backgroundColor: '#e8f5e9', marginTop: '1.5rem' }}>
+              <strong>How it works:</strong><br />
+              ⏰ Automated checks run 3 times daily during market hours (9:30am, 12:30pm, 3:30pm ET).
+              You'll receive a BUYBACK alert when the option premium drops to ${position.alert_target.toFixed(2)} or below (early close opportunity).
+            </div>
           </>
         )}
       </DetailPageLayout>
+
+      {showEditModal && (
+        <EditPosition
+          user={user}
+          position={position}
+          onClose={() => setShowEditModal(false)}
+          onSave={handleEditSave}
+        />
+      )}
 
       <ConfirmDialog
         isOpen={showDeleteConfirm}

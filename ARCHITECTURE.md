@@ -331,14 +331,14 @@ FOR EACH user:
   │    ├─ Calculate outperformance
   │    ├─ Update position.current_* fields
   │    ├─ IF outperformance >= exit_threshold:
-  │    │   └─ Send push: "NVDA ready to exit +12.5%"
+  │    │   └─ Send push: "NVDA ready to swap +12.5%"
   │    └─ IF type == 'covered_call':
   │        ├─ Get option chain (Yahoo)
   │        ├─ Extract bid/ask
   │        ├─ Calculate spread
   │        ├─ Update position.current_bid/ask/mid
   │        └─ IF mid <= alert_target:
-  │            └─ Send push: "ETHA call at target"
+  │            └─ Send push: "ETHA call at buyback target"
   │
   └─ Fetch active strategies
       ↓
@@ -348,7 +348,7 @@ FOR EACH user:
        ├─ IF underperformance <= entry_threshold:
        │   ├─ Check if position already exists
        │   └─ IF NOT exists:
-       │       └─ Send push: "NVDA buy signal"
+       │       └─ Send push: "NVDA entry signal"
        └─ Update strategy.last_checked_at
   ↓
 Script completes (5-10 min for 100 users)
@@ -363,8 +363,8 @@ Fetch user's push subscription from Supabase
   ↓
 Prepare notification payload:
   {
-    title: "NVDA Ready to Exit",
-    body: "+12.5% outperformance vs VGT",
+    title: "NVDA Ready to Swap",
+    body: "+12.5% outperformance vs VGT (time to rotate back)",
     icon: "/icon-192.png",
     badge: "/badge-72.png",
     data: { positionId: "abc-123", action: "SELL" }

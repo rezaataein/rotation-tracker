@@ -6,6 +6,7 @@ import Dashboard from './pages/Dashboard';
 import Scanner from './pages/Scanner';
 import PositionDetail from './pages/PositionDetail';
 import StrategyDetail from './pages/StrategyDetail';
+import Settings from './pages/Settings';
 import BottomNav from './components/BottomNav';
 import AddPosition from './components/AddPosition';
 import AddStrategy from './components/AddStrategy';
@@ -71,10 +72,7 @@ function AppContent({ user }) {
         } />
         <Route path="/settings" element={
           <>
-            <div style={{ padding: '20px', paddingBottom: '80px' }}>
-              <h1>Settings</h1>
-              <p>Settings page coming soon...</p>
-            </div>
+            <Settings user={user} />
             <BottomNav />
           </>
         } />

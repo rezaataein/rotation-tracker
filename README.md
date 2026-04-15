@@ -42,10 +42,10 @@ Entry Signal: -12% underperformance
 ```
 
 App checks 3x daily (9am, 12pm, 3pm ET):
-- If NVDA -12% vs VGT → Send BUY signal push notification
+- If NVDA -12% vs VGT → Send entry signal push notification
 - User manually creates position and sets exit threshold (e.g., +6%)
 - Cron monitors position exit threshold
-- When NVDA +6% vs VGT → Send SELL signal push notification
+- When NVDA +6% vs VGT → Send swap signal push notification
 
 ### **2. Position Tracking**
 
@@ -63,9 +63,9 @@ App checks 3x daily (9am, 12pm, 3pm ET):
 
 ### **3. Push Notifications**
 - Silent unless action needed
-- BUY signal → "NVDA ready to enter"
-- SELL signal → "NVDA ready to exit +12.5%"
-- Options alert → "ETHA call at target price"
+- Entry signal → "NVDA ready to enter (underperforming VGT by 12%)"
+- Swap signal → "NVDA ready to swap back (outperforming VGT by 6%)"
+- Buyback alert → "ETHA call at buyback target ($2.75)"
 
 ---
 
@@ -145,16 +145,16 @@ App checks 3x daily (9am, 12pm, 3pm ET):
 - ✅ Versioning (package.json + build date)
 - ✅ Position detail views with interactive TradingView charts
 - ✅ Strategy scanner with strategy management (add/edit/delete/activate)
-- ✅ Strategy detail view with performance charts and BUY signal indicators
+- ✅ Strategy detail view with performance charts and signal indicators
 - ✅ Shared component architecture (DetailPageLayout, MetricCards)
 - ✅ Professional confirmation dialogs (no browser alerts/confirms)
 - ✅ Consistent refresh pattern across all list views
+- ✅ Edit position/strategy functionality with chart refresh
+- ✅ Settings page (user profile, notifications toggle, logout, about)
 
 **In Development:**
-- 🔨 Settings page (user preferences, notification settings)
 - 🔨 GitHub Actions cron job (price updates + signals)
-- 🔨 Push notifications
-- 🔨 Edit position/strategy functionality
+- 🔨 Web push notifications implementation
 
 ---
 

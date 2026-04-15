@@ -21,7 +21,7 @@ export default function RelativePerformanceChart({ position, onPricesLoaded }) {
         chartRef.current = null;
       }
     };
-  }, [position.id]);
+  }, [position.id, position.entry_date, position.entry_stock_price, position.entry_bench_price, position.exit_threshold]);
 
   const fetchDataAndRenderChart = async () => {
     try {
