@@ -40,7 +40,7 @@ self.addEventListener('activate', (event) => {
 
 // Push event - receive and display notification
 self.addEventListener('push', (event) => {
-  console.log('[SW] Push received:', event);
+  console.log('[SW] Push received');
 
   let data = {};
 
@@ -48,6 +48,7 @@ self.addEventListener('push', (event) => {
     data = event.data ? event.data.json() : {};
   } catch (e) {
     console.error('[SW] Error parsing push data:', e);
+    // Use fallback notification data
     data = {
       title: 'Rotation Tracker',
       body: 'New notification',
@@ -70,6 +71,8 @@ self.addEventListener('push', (event) => {
 
   event.waitUntil(
     self.registration.showNotification(title, options)
+      .then(() => console.log('[SW] Notification displayed'))
+      .catch((error) => console.error('[SW] Error showing notification:', error))
   );
 });
 

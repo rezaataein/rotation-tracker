@@ -194,7 +194,7 @@ export default function Settings({ user }) {
           <h2>About</h2>
           <div className="setting-item">
             <div className="setting-label">Version</div>
-            <div className="setting-value">0.5.2</div>
+            <div className="setting-value">0.5.3</div>
           </div>
           <div className="about-description">
             <p>

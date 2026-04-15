@@ -2,6 +2,21 @@
 
 All notable changes to Rotation Tracker will be documented in this file.
 
+## [0.5.3] - 2026-04-15
+
+### Changed
+- **Service Worker Logging** - Cleaned up debug logging
+  - Removed extensive debug logs from push event handler
+  - Removed verbose logging from push subscription flow
+  - Kept essential error logging for troubleshooting
+
+### Technical
+- **notifications table** - Clarified purpose and retention policy
+  - Table stores permanent history/audit log of all sent notifications
+  - Rows are never auto-deleted (intentional - it's a log)
+  - Used for debugging, analytics, and preventing duplicate alerts
+  - Different from push_subscriptions (which gets deleted on toggle OFF)
+
 ## [0.5.2] - 2026-04-15
 
 ### Fixed
