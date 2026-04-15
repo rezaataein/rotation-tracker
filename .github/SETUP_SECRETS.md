@@ -12,12 +12,28 @@ The workflow reuses existing variables from the deploy workflow:
   - Used by both frontend build and monitoring script
   - Should already exist from initial setup
 
-### 2. Secret (needs to be added)
+### 2. Secrets (needs to be added)
 
 **SUPABASE_SERVICE_KEY** ⚠️
 - Your Supabase service role key (SECRET!)
 - This key bypasses Row-Level Security
 - Get from: Supabase Dashboard → Settings → API → `service_role` key
+
+**VAPID_PUBLIC_KEY** ⚠️
+- Web Push VAPID public key
+- Generated via: `npx web-push generate-vapid-keys`
+- Format: `BDx...` (base64 encoded)
+
+**VAPID_PRIVATE_KEY** ⚠️
+- Web Push VAPID private key
+- Generated via: `npx web-push generate-vapid-keys`
+- Format: `Abc...` (base64 encoded)
+- KEEP SECRET - used to sign push notifications
+
+**VAPID_CLAIMS_EMAIL** ⚠️
+- Contact email for push service
+- Format: your email address (e.g., `notifications@yourdomain.com`)
+- Used by browser push services to contact you if issues arise
 
 ## How to Add Secret
 
