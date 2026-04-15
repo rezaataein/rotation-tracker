@@ -2,6 +2,25 @@
 
 All notable changes to Rotation Tracker will be documented in this file.
 
+## [0.5.7] - 2026-04-15
+
+### Fixed
+- **Notification Click 404 Error** - Critical fix for notification URLs
+  - Added `/rotation-tracker/` base path to all notification URLs in monitor.py
+  - Fixed BUY signal route: `/scanner/{id}` → `/rotation-tracker/strategy/{id}` (correct route)
+  - Fixed SELL signal route: `/position/{id}` → `/rotation-tracker/position/{id}`
+  - Fixed OPTION_ALERT route: `/position/{id}` → `/rotation-tracker/position/{id}`
+  - Fixed default URL: `/` → `/rotation-tracker/`
+  - Fixed icon paths to include base path
+  - Notifications now correctly navigate to intended page instead of 404
+
+### Technical
+- **Root Cause:** monitor.py was sending URLs without GitHub Pages base path
+  - Service worker constructed: `https://rezaataei.github.io/position/123` (404!)
+  - Now constructs: `https://rezaataei.github.io/rotation-tracker/position/123` ✓
+- All three notification types now use correct full paths
+- Icon URLs also updated to include base path
+
 ## [0.5.6] - 2026-04-15
 
 ### Changed

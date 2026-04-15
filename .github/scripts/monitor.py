@@ -483,32 +483,32 @@ def send_notification(supabase: Client, signal: Dict, test_mode: bool = False):
         title = f"🟢 Entry Signal: {signal['ticker']}"
         body = f"{signal['ticker']} underperforming {signal['benchmark']} by {abs(signal['relative_performance']*100):.1f}% - Ready to enter position"
         tag = f"strategy-{signal['strategy_id']}"
-        url = f"/scanner/{signal['strategy_id']}"
+        url = f"/rotation-tracker/strategy/{signal['strategy_id']}"
 
     elif signal_type == 'SELL':
         title = f"🔄 Swap Signal: {signal['ticker']}"
         body = f"{signal['ticker']} outperforming {signal['benchmark']} by {signal['current_outperformance']*100:+.1f}% - Ready to rotate back"
         tag = f"position-{signal['position_id']}"
-        url = f"/position/{signal['position_id']}"
+        url = f"/rotation-tracker/position/{signal['position_id']}"
 
     elif signal_type == 'OPTION_ALERT':
         title = f"💰 Buyback Alert: {signal['ticker']}"
         body = f"${signal['strike']} call at ${signal['bid']:.2f} (P&L: {signal['pnl_pct']:+.1f}%) - {signal['days_to_exp']}d to exp"
         tag = f"position-{signal['position_id']}"
-        url = f"/position/{signal['position_id']}"
+        url = f"/rotation-tracker/position/{signal['position_id']}"
 
     else:
         title = f"Info: {signal.get('ticker', 'Unknown')}"
         body = "General notification"
         tag = "general"
-        url = "/"
+        url = "/rotation-tracker/"
 
     # Prepare notification payload
     notification_payload = {
         "title": title,
         "body": body,
-        "icon": "/icon-192.png",
-        "badge": "/badge-72.png",
+        "icon": "/rotation-tracker/icons/icon-192.png",
+        "badge": "/rotation-tracker/icons/icon-192.png",
         "tag": tag,
         "data": {
             "url": url,
