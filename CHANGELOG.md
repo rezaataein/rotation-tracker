@@ -2,6 +2,39 @@
 
 All notable changes to Rotation Tracker will be documented in this file.
 
+## [0.5.0] - 2026-04-15
+
+### Added
+- **Web Push Notifications - Frontend Implementation**
+  - Custom service worker (`public/sw.js`) handles push events
+  - Push notification handler displays alerts with custom data
+  - Notification click opens app to relevant page (position/strategy)
+  - Push subscription utility functions (`src/lib/pushNotifications.js`)
+  - Settings page notification toggle (fully functional)
+  - Permission request flow with error handling
+  - Subscription save/remove from Supabase database
+  - Browser support detection
+  - Loading states and error messages
+
+### Changed
+- **Settings Page** - Notifications section now fully functional
+  - Toggle enables/disables push notifications
+  - Shows subscription status on load
+  - Displays success/error states with colored info notes
+  - Checks browser support automatically
+  
+- **PWA Configuration** - Updated to use custom service worker
+  - Changed from `generateSW` to `injectManifest` strategy
+  - Custom SW handles both caching and push notifications
+  - Removed workbox configuration (using custom fetch handler)
+
+### Technical
+- VAPID public key configured via `VITE_VAPID_PUBLIC_KEY` env variable
+- Service worker supports offline caching and push notifications
+- Subscription data (endpoint, p256dh, auth) saved to database
+- Added VAPID keys to GitHub Actions workflow environment
+- Updated `.github/SETUP_SECRETS.md` documentation
+
 ## [0.4.0] - 2026-04-15
 
 ### Added

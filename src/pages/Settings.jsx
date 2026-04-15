@@ -1,12 +1,52 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { useNavigate } from 'react-router-dom';
+import {
+  isPushSupported,
+  getPermissionStatus,
+  requestNotificationPermission,
+  subscribeToPush,
+  unsubscribeFromPush,
+  saveSubscriptionToDatabase,
+  removeSubscriptionFromDatabase,
+  hasActiveSubscription
+} from '../lib/pushNotifications';
 import './Settings.css';
 
 export default function Settings({ user }) {
   const navigate = useNavigate();
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
+  const [notificationsLoading, setNotificationsLoading] = useState(true);
+  const [notificationError, setNotificationError] = useState(null);
   const [loggingOut, setLoggingOut] = useState(false);
+
+  // Check subscription status on mount
+  useEffect(() => {
+    checkSubscriptionStatus();
+  }, [user.id]);
+
+  const checkSubscriptionStatus = async () => {
+    try {
+      setNotificationsLoading(true);
+
+      // Check if push is supported
+      if (!isPushSupported()) {
+        setNotificationError('Push notifications are not supported in this browser');
+        setNotificationsLoading(false);
+        return;
+      }
+
+      // Check if user has active subscription in database
+      const hasSubscription = await hasActiveSubscription(user.id);
+      setNotificationsEnabled(hasSubscription);
+
+    } catch (error) {
+      console.error('Error checking subscription status:', error);
+      setNotificationError('Failed to check notification status');
+    } finally {
+      setNotificationsLoading(false);
+    }
+  };
 
   const handleLogout = async () => {
     try {
@@ -20,18 +60,60 @@ export default function Settings({ user }) {
   };
 
   const handleNotificationToggle = async () => {
-    // Placeholder for Phase 4: Web Push Notifications
-    // Will implement browser notification permission + subscription
-    setNotificationsEnabled(!notificationsEnabled);
+    if (notificationsLoading) return;
 
-    // TODO: Implement web push subscription
-    // if (!notificationsEnabled) {
-    //   - Request notification permission
-    //   - Subscribe to push notifications
-    //   - Send subscription to backend
-    // } else {
-    //   - Unsubscribe from push notifications
-    // }
+    setNotificationError(null);
+    setNotificationsLoading(true);
+
+    try {
+      if (!notificationsEnabled) {
+        // ENABLE notifications
+
+        // Step 1: Request permission
+        const permission = await requestNotificationPermission();
+
+        if (permission !== 'granted') {
+          setNotificationError('Notification permission denied. Please enable notifications in your browser settings.');
+          setNotificationsLoading(false);
+          return;
+        }
+
+        // Step 2: Subscribe to push
+        const subscription = await subscribeToPush();
+
+        // Step 3: Save to database
+        await saveSubscriptionToDatabase(subscription, user.id);
+
+        // Step 4: Update state
+        setNotificationsEnabled(true);
+        console.log('Push notifications enabled successfully');
+
+      } else {
+        // DISABLE notifications
+
+        // Step 1: Unsubscribe from push
+        await unsubscribeFromPush();
+
+        // Step 2: Get current subscription to find endpoint
+        const registration = await navigator.serviceWorker.ready;
+        const subscription = await registration.pushManager.getSubscription();
+
+        if (subscription) {
+          // Step 3: Remove from database
+          await removeSubscriptionFromDatabase(subscription.endpoint);
+        }
+
+        // Step 4: Update state
+        setNotificationsEnabled(false);
+        console.log('Push notifications disabled successfully');
+      }
+
+    } catch (error) {
+      console.error('Error toggling notifications:', error);
+      setNotificationError(error.message || 'Failed to toggle notifications');
+    } finally {
+      setNotificationsLoading(false);
+    }
   };
 
   return (
@@ -69,19 +151,32 @@ export default function Settings({ user }) {
                 type="checkbox"
                 checked={notificationsEnabled}
                 onChange={handleNotificationToggle}
-                disabled={true} // TODO: Enable in Phase 4
+                disabled={notificationsLoading || !isPushSupported()}
               />
               <span className="toggle-slider"></span>
             </label>
           </div>
-          {!notificationsEnabled && (
+
+          {notificationError && (
+            <div className="info-note" style={{ marginTop: '1rem', backgroundColor: '#fee2e2', borderColor: '#fecaca', color: '#991b1b' }}>
+              <strong>Error:</strong> {notificationError}
+            </div>
+          )}
+
+          {!notificationsEnabled && !notificationError && (
             <div className="info-note" style={{ marginTop: '1rem' }}>
-              <strong>Coming Soon:</strong> Web push notifications for all trading signals. Get instant alerts when:
+              <strong>Enable push notifications</strong> to receive instant alerts when:
               <ul style={{ marginTop: '0.5rem', marginBottom: 0, paddingLeft: '1.25rem' }}>
                 <li>A strategy signals an entry opportunity (ticker underperforms)</li>
                 <li>A stock position reaches exit threshold (time to swap back)</li>
                 <li>A covered call premium drops to your buyback target</li>
               </ul>
+            </div>
+          )}
+
+          {notificationsEnabled && !notificationError && (
+            <div className="info-note" style={{ marginTop: '1rem', backgroundColor: '#d1fae5' }}>
+              <strong>✓ Notifications enabled!</strong> You'll receive alerts 3x daily during market hours when signals are triggered.
             </div>
           )}
         </section>
@@ -103,7 +198,7 @@ export default function Settings({ user }) {
           <h2>About</h2>
           <div className="setting-item">
             <div className="setting-label">Version</div>
-            <div className="setting-value">0.4.0</div>
+            <div className="setting-value">0.5.0</div>
           </div>
           <div className="about-description">
             <p>
