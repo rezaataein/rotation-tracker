@@ -3,20 +3,22 @@
 
 const CACHE_NAME = 'rotation-tracker-v1';
 
-// Workbox will inject the manifest here
-const manifest = self.__WB_MANIFEST;
-
 // Install event - cache assets
 self.addEventListener('install', (event) => {
   console.log('[SW] Install event');
 
-  // Precache files from manifest
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      console.log('[SW] Precaching manifest files');
-      return cache.addAll(manifest.map(entry => entry.url));
-    })
-  );
+  // Workbox will inject manifest here: self.__WB_MANIFEST
+  const manifest = self.__WB_MANIFEST || [];
+
+  if (manifest.length > 0) {
+    // Precache files from manifest
+    event.waitUntil(
+      caches.open(CACHE_NAME).then((cache) => {
+        console.log('[SW] Precaching', manifest.length, 'files');
+        return cache.addAll(manifest.map(entry => entry.url));
+      })
+    );
+  }
 
   self.skipWaiting(); // Activate immediately
 });

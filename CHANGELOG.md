@@ -2,6 +2,24 @@
 
 All notable changes to Rotation Tracker will be documented in this file.
 
+## [0.5.2] - 2026-04-15
+
+### Fixed
+- **Service Worker Registration** - Added manual registration for injectManifest strategy
+  - Service worker now properly registers on page load
+  - Fixed undefined manifest error in service worker install event
+  - Added fallback for empty manifest array
+  
+- **Push Subscription Delete** - Fixed toggle OFF not removing database row
+  - Get subscription endpoint BEFORE unsubscribing
+  - Properly deletes row from push_subscriptions table
+  - Maintains clean data (no stale subscriptions)
+
+### Changed
+- **Settings Page** - Removed User ID display
+  - Email is sufficient for user identification
+  - Cleaner, less cluttered interface
+
 ## [0.5.1] - 2026-04-15
 
 ### Fixed

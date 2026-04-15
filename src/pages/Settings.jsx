@@ -91,16 +91,16 @@ export default function Settings({ user }) {
       } else {
         // DISABLE notifications
 
-        // Step 1: Unsubscribe from push
-        await unsubscribeFromPush();
-
-        // Step 2: Get current subscription to find endpoint
+        // Step 1: Get current subscription to find endpoint (BEFORE unsubscribing!)
         const registration = await navigator.serviceWorker.ready;
         const subscription = await registration.pushManager.getSubscription();
 
         if (subscription) {
-          // Step 3: Remove from database
+          // Step 2: Remove from database FIRST
           await removeSubscriptionFromDatabase(subscription.endpoint);
+
+          // Step 3: Unsubscribe from push (destroys the subscription)
+          await unsubscribeFromPush();
         }
 
         // Step 4: Update state
@@ -129,10 +129,6 @@ export default function Settings({ user }) {
           <div className="setting-item">
             <div className="setting-label">Email</div>
             <div className="setting-value">{user.email}</div>
-          </div>
-          <div className="setting-item">
-            <div className="setting-label">User ID</div>
-            <div className="setting-value">{user.id}</div>
           </div>
         </section>
 
@@ -198,7 +194,7 @@ export default function Settings({ user }) {
           <h2>About</h2>
           <div className="setting-item">
             <div className="setting-label">Version</div>
-            <div className="setting-value">0.5.1</div>
+            <div className="setting-value">0.5.2</div>
           </div>
           <div className="about-description">
             <p>

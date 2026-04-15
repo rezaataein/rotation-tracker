@@ -63,19 +63,30 @@ export async function subscribeToPush() {
     throw new Error('Push notifications are not supported');
   }
 
+  console.log('[Push] VAPID_PUBLIC_KEY:', VAPID_PUBLIC_KEY);
+
+  if (!VAPID_PUBLIC_KEY) {
+    throw new Error('VAPID public key is not configured. Check VITE_VAPID_PUBLIC_KEY in .env file.');
+  }
+
   try {
     // Get service worker registration
+    console.log('[Push] Waiting for service worker...');
     const registration = await navigator.serviceWorker.ready;
+    console.log('[Push] Service worker ready');
 
     // Check if already subscribed
     let subscription = await registration.pushManager.getSubscription();
+    console.log('[Push] Existing subscription:', subscription);
 
     if (!subscription) {
       // Subscribe to push
+      console.log('[Push] Subscribing to push...');
       subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
       });
+      console.log('[Push] Subscription created:', subscription);
     }
 
     return subscription;
