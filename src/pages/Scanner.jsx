@@ -404,18 +404,7 @@ export default function Scanner({ user, refreshKey }) {
                         </div>
                         <div className="target-display">
                           <span className="target-label">
-                            {(() => {
-                              const distanceToSignal = spread - (-entryThreshold);
-                              const progressPercent = entrySignal ? 100 : Math.max(0, Math.min(100, ((entryThreshold - Math.abs(spread)) / entryThreshold) * 100));
-
-                              if (entrySignal) {
-                                return 'Entry Target: ✓ Hit!';
-                              } else if (progressPercent >= 80) {
-                                return `Almost There: ${Math.abs(distanceToSignal).toFixed(1)}% away`;
-                              } else {
-                                return `Entry Target: ${Math.abs(entryThreshold)}% under`;
-                              }
-                            })()}
+                            Entry Target: {entryThreshold}% underperformance
                           </span>
                         </div>
                         <div className={`signal-badge ${entrySignal ? 'signal-active' : 'signal-inactive'}`}>
