@@ -33,12 +33,23 @@ export function SpreadCard({ spread, threshold, thresholdLabel, signalLabel, com
   const meetsThreshold = spread != null &&
     (compareGreaterThan ? spread >= threshold : spread <= threshold);
 
+  // For strategies (compareGreaterThan=false): negative spread = underperforming = good (favorable)
+  // For positions (compareGreaterThan=true): positive spread = outperforming = good (favorable)
+  const isFavorable = spread != null &&
+    (compareGreaterThan ? spread > 0 : spread < 0);
+
+  const getSpreadClass = () => {
+    if (meetsThreshold) return 'buy-signal';
+    if (isFavorable) return 'spread-favorable';
+    return 'spread-unfavorable';
+  };
+
   return (
     <div className="metrics-card">
       <h3>Spread</h3>
       <div className="spread-display">
-        <span className={`spread-value ${meetsThreshold ? 'buy-signal' : ''}`}>
-          {loading ? '...' : spread != null ? `${spread.toFixed(2)}%` : '—'}
+        <span className={`spread-value ${getSpreadClass()}`}>
+          {loading ? '...' : spread != null ? `${spread >= 0 ? '+' : ''}${spread.toFixed(2)}%` : '—'}
         </span>
         {meetsThreshold && (
           <span className="signal-badge">{signalLabel}</span>

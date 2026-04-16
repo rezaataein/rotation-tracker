@@ -2,6 +2,22 @@
 
 All notable changes to Rotation Tracker will be documented in this file.
 
+## [0.10.1] - 2026-04-16
+
+### Fixed
+- **Strategy Color Semantics** - Inverted spread colors to match user intent
+  - Negative spread (underperforming) = GREEN ✅ (good for entry opportunity)
+  - Positive spread (outperforming) = GRAY (still waiting)
+  - Removed misleading directional arrows that suggested "down = bad"
+  - Now consistent with mean reversion strategy: underperformance = entry signal
+
+### Changed
+- **Strategy Spread Display** - Cleaner, more intuitive visual feedback
+  - Scanner cards show green when stock underperforms benchmark (entry opportunity)
+  - Detail view shows subtle color even before threshold hit
+  - Removed confusing ↑/↓ arrows that conflicted with color semantics
+  - Visual feedback now aligns with trading intent: "negative spread = good"
+
 ## [0.10.0] - 2026-04-16
 
 ### Fixed

@@ -398,8 +398,8 @@ export default function Scanner({ user, refreshKey }) {
                         </p>
                         <div className="spread-display">
                           <span className="spread-label">Current Spread:</span>
-                          <span className={`spread-value ${spread >= 0 ? 'positive' : 'negative'}`}>
-                            {spread >= 0 ? '↑' : '↓'} {spread >= 0 ? '+' : ''}{spread.toFixed(2)}%
+                          <span className={`spread-value ${spread <= 0 ? 'positive' : 'negative'}`}>
+                            {spread >= 0 ? '+' : ''}{spread.toFixed(2)}%
                           </span>
                         </div>
                         <div className="target-display">
