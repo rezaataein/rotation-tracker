@@ -2,6 +2,49 @@
 
 All notable changes to Rotation Tracker will be documented in this file.
 
+## [0.10.0] - 2026-04-16
+
+### Fixed
+- **Covered Call Premium Colors** - Inverted colors to match user's position
+  - Premium decrease (cheaper to buy back) = GREEN ✅ (good for seller)
+  - Premium increase (more expensive to buy back) = RED ❌ (bad for seller)
+  - Industry standard: Options sellers want lower premiums
+  
+### Changed
+- **Covered Call Display** - Improved UX for sold options
+  - Changed label from "Premium:" to "Cost to Close:" (clearer intent)
+  - Shows current cost with directional arrow (↑ ↓)
+  - Entry premium shown as reference "(entry: $X.XX)"
+  - Colors now match seller's perspective (down = good, up = bad)
+
+- **Stock vs Strike Price Warnings** - Added assignment risk indicators
+  - ✓ Safe OTM (green) - Stock > 10% below strike (safe)
+  - ⚡ Near Strike (yellow) - Stock within 5% of strike (watch it)
+  - ⚠️ ITM - Assignment Risk (red) - Stock above strike (danger)
+  - Helps users monitor covered call positions proactively
+
+- **Directional Arrows** - Added visual momentum indicators
+  - All spread values show ↑ (up) or ↓ (down) arrows
+  - Premium changes show direction + magnitude
+  - Easier to see trends at a glance
+
+- **Signal Badge Consistency** - Standardized across app
+  - Stock rotation exit: "🔔 EXIT SIGNAL" (was "✓ SWAP SIGNAL")
+  - Scanner entry: "🔔 ENTRY SIGNAL" (was "🎯 ENTRY SIGNAL")
+  - Covered call buyback: "🔔 BUYBACK SIGNAL" (was "🟢 BUYBACK NOW!")
+  - Consistent bell emoji for all alert types
+
+- **Scanner Entry Display** - Improved distance-to-signal feedback
+  - Shows "Almost There: X.X% away" when close (80%+ progress)
+  - Shows "Entry Target: ✓ Hit!" when signal fires
+  - Better progress indication than just raw spread value
+
+### Technical
+- Colors now match financial position semantics (long vs short)
+- Premium change calculation inverted for sold options
+- Added stock price moneyness calculation and warning classes
+- Consistent signal terminology across all pages
+
 ## [0.9.0] - 2026-04-16
 
 ### Fixed

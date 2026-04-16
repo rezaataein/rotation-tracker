@@ -257,7 +257,7 @@ export default function PositionDetail({ user }) {
                 spread={currentSpread}
                 threshold={targetSpread}
                 thresholdLabel={`Exit at ${targetSpread.toFixed(1)}% outperformance`}
-                signalLabel="✓ SWAP SIGNAL"
+                signalLabel="🔔 EXIT SIGNAL"
                 compareGreaterThan={true}
                 loading={!currentPrices}
               />
@@ -290,11 +290,11 @@ export default function PositionDetail({ user }) {
               {position.active ? (
                 <>
                   ⏰ Automated checks run 3 times daily during market hours (9:30am, 12:30pm, 3:30pm ET).
-                  You'll receive a SWAP alert when this position outperforms {position.benchmark} by {targetSpread.toFixed(1)}% (time to rotate back to benchmark).
+                  You'll receive an EXIT alert when this position outperforms {position.benchmark} by {targetSpread.toFixed(1)}% (time to rotate back to benchmark).
                 </>
               ) : (
                 <>
-                  ⏸️ Position paused - No automated checks running. Click Activate to resume monitoring for swap signals.
+                  ⏸️ Position paused - No automated checks running. Click Activate to resume monitoring for exit signals.
                 </>
               )}
             </div>

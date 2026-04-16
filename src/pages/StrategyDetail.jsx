@@ -179,7 +179,7 @@ export default function StrategyDetail({ user }) {
             spread={chartData?.spread}
             threshold={strategy.entry_threshold * 100}
             thresholdLabel={`Entry at ${(Math.abs(strategy.entry_threshold) * 100).toFixed(1)}% underperformance`}
-            signalLabel="🎯 ENTRY SIGNAL"
+            signalLabel="🔔 ENTRY SIGNAL"
             compareGreaterThan={false}
             loading={!chartData}
           />

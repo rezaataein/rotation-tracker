@@ -442,7 +442,7 @@ export default function Dashboard({ user, refreshKey }) {
                             <div className="spread-display">
                               <span className="spread-label">Spread:</span>
                               <span className={`spread-value ${spread >= 0 ? 'positive' : 'negative'}`}>
-                                {spread >= 0 ? '+' : ''}{spread.toFixed(2)}%
+                                {spread >= 0 ? '↑' : '↓'} {spread >= 0 ? '+' : ''}{spread.toFixed(2)}%
                               </span>
                             </div>
                             <div className="target-display">
@@ -450,7 +450,7 @@ export default function Dashboard({ user, refreshKey }) {
                               <span className="target-value">+{exitThreshold}%</span>
                             </div>
                             <div className={`signal-badge ${exitSignal ? 'signal-active' : 'signal-inactive'}`}>
-                              {exitSignal ? '✓ SWAP SIGNAL' : 'Not Yet'}
+                              {exitSignal ? '🔔 EXIT SIGNAL' : 'Not Yet'}
                             </div>
                           </>
                         ) : (
@@ -466,21 +466,45 @@ export default function Dashboard({ user, refreshKey }) {
                           <p className="spread-loading">Loading option data...</p>
                         ) : option && currentPremium !== null ? (
                           <>
-                            <p className="prices-label">
-                              Stock ${option.stockPrice?.toFixed(2) || '—'} | ${position.strike} Call
-                            </p>
+                            {(() => {
+                              const stockPrice = option.stockPrice || 0;
+                              const strike = position.strike;
+                              const percentToStrike = ((stockPrice - strike) / strike) * 100;
+                              let priceWarning = '';
+                              let priceWarningClass = '';
+
+                              if (percentToStrike > 0) {
+                                priceWarning = '⚠️ ITM - Assignment Risk';
+                                priceWarningClass = 'stock-price-danger';
+                              } else if (percentToStrike > -5) {
+                                priceWarning = '⚡ Near Strike';
+                                priceWarningClass = 'stock-price-warning';
+                              } else {
+                                priceWarning = '✓ Safe OTM';
+                                priceWarningClass = 'stock-price-safe';
+                              }
+
+                              return (
+                                <p className={`prices-label ${priceWarningClass}`}>
+                                  Stock ${stockPrice.toFixed(2)} | ${strike} Call <span className="moneyness-badge">{priceWarning}</span>
+                                </p>
+                              );
+                            })()}
                             <p className="expiration-label">
                               Exp {new Date(position.expiration).toLocaleDateString('en-US', { month: 'numeric', day: 'numeric' })}
                             </p>
                             <div className="premium-display">
-                              <span className="premium-label">Premium:</span>
+                              <span className="premium-label">Cost to Close:</span>
                               <span className="premium-flow">
-                                ${position.entry_premium.toFixed(2)} → ${currentPremium.toFixed(2)}
+                                ${currentPremium.toFixed(2)}
                                 {premiumChange !== null && (
-                                  <span className={`premium-change ${premiumChange >= 0 ? 'positive' : 'negative'}`}>
-                                    {' '}{premiumChange >= 0 ? '+' : ''}{premiumChange.toFixed(0)}%
+                                  <span className={`premium-change ${premiumChange <= 0 ? 'positive' : 'negative'}`}>
+                                    {' '}{premiumChange >= 0 ? '↑' : '↓'} {Math.abs(premiumChange).toFixed(0)}%
                                   </span>
                                 )}
+                                <span style={{ fontSize: '0.75rem', color: '#9ca3af', marginLeft: '0.25rem' }}>
+                                  (entry: ${position.entry_premium.toFixed(2)})
+                                </span>
                               </span>
                             </div>
                             <div className="bid-ask-display">
@@ -491,7 +515,7 @@ export default function Dashboard({ user, refreshKey }) {
                               <span className="target-value">${position.alert_target.toFixed(2)}</span>
                             </div>
                             <div className={`signal-badge ${buybackSignal ? 'signal-active' : 'signal-inactive'}`}>
-                              {buybackSignal ? '🟢 BUYBACK NOW!' : 'Not Yet'}
+                              {buybackSignal ? '🔔 BUYBACK SIGNAL' : 'Not Yet'}
                             </div>
                           </>
                         ) : (

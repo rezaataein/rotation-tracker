@@ -397,17 +397,29 @@ export default function Scanner({ user, refreshKey }) {
                           ${priceData[strategy.ticker]?.toFixed(2) || '—'} vs {strategy.benchmark} ${priceData[strategy.benchmark]?.toFixed(2) || '—'}
                         </p>
                         <div className="spread-display">
-                          <span className="spread-label">Spread ({strategy.lookback_days}d):</span>
+                          <span className="spread-label">Current Spread:</span>
                           <span className={`spread-value ${spread >= 0 ? 'positive' : 'negative'}`}>
-                            {spread >= 0 ? '+' : ''}{spread.toFixed(2)}%
+                            {spread >= 0 ? '↑' : '↓'} {spread >= 0 ? '+' : ''}{spread.toFixed(2)}%
                           </span>
                         </div>
                         <div className="target-display">
-                          <span className="target-label">Entry Target:</span>
-                          <span className="target-value">-{entryThreshold}%</span>
+                          <span className="target-label">
+                            {(() => {
+                              const distanceToSignal = spread - (-entryThreshold);
+                              const progressPercent = entrySignal ? 100 : Math.max(0, Math.min(100, ((entryThreshold - Math.abs(spread)) / entryThreshold) * 100));
+
+                              if (entrySignal) {
+                                return 'Entry Target: ✓ Hit!';
+                              } else if (progressPercent >= 80) {
+                                return `Almost There: ${Math.abs(distanceToSignal).toFixed(1)}% away`;
+                              } else {
+                                return `Entry Target: ${Math.abs(entryThreshold)}% under`;
+                              }
+                            })()}
+                          </span>
                         </div>
                         <div className={`signal-badge ${entrySignal ? 'signal-active' : 'signal-inactive'}`}>
-                          {entrySignal ? '🎯 ENTRY SIGNAL' : 'Not Yet'}
+                          {entrySignal ? '🔔 ENTRY SIGNAL' : 'Not Yet'}
                         </div>
                       </>
                     ) : (

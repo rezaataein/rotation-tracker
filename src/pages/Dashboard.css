@@ -403,6 +403,31 @@
   text-align: center;
 }
 
+/* Stock price warning indicators */
+.moneyness-badge {
+  display: inline-block;
+  margin-left: 0.5rem;
+  padding: 0.125rem 0.5rem;
+  border-radius: 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.stock-price-safe .moneyness-badge {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.stock-price-warning .moneyness-badge {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.stock-price-danger .moneyness-badge {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
 .spread-loading {
   margin-top: 0.5rem;
   color: #9ca3af;
