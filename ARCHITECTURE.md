@@ -340,8 +340,8 @@ Frontend requests historical prices:
   - fetchMultipleHistoricalPrices(['NVDA', 'VGT'], entry_date, today)
   ↓
 Extract current prices from historical response:
-  - stockData.meta.regularMarketPrice
-  - benchData.meta.regularMarketPrice
+  - getCurrentPrice(stockData.meta) // prioritizes postMarket → preMarket → regular
+  - getCurrentPrice(benchData.meta)
   ↓
 Update sessionStorage cache with fresh prices:
   - updateCacheTickers({ 'NVDA': {...}, 'VGT': {...} })

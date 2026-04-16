@@ -29,6 +29,13 @@ Fetches stock quotes, historical prices, and options data from Yahoo Finance.
 - **Options data** (`fetchOptions: true`): Calls, puts, strikes, expirations
   - Optional: `expirationDate` (YYYY-MM-DD) - Filter to specific expiration date only
 
+**Extended Hours Data:**
+When `interval` is intraday (`1m`, `5m`, `15m`, `30m`, `60m`), the response includes:
+- `includePrePost: true` parameter automatically added
+- `preMarketPrice` / `preMarketTime` (4:00 AM - 9:30 AM ET)
+- `postMarketPrice` / `postMarketTime` (4:00 PM - 8:00 PM ET)
+- Use `getCurrentPrice()` helper (from `src/lib/priceUtils.js`) to prioritize extended hours over regular market
+
 **Response:**
 ```json
 {
@@ -38,7 +45,14 @@ Fetches stock quotes, historical prices, and options data from Yahoo Finance.
         "symbol": "AAPL",
         "timestamps": [...],
         "close": [...],
-        "meta": { "regularMarketPrice": 150.25 }
+        "meta": {
+          "regularMarketPrice": 150.25,
+          "regularMarketTime": 1776377773,
+          "preMarketPrice": null,
+          "preMarketTime": null,
+          "postMarketPrice": 148.50,
+          "postMarketTime": 1776391200
+        }
       }
     ]
   },
