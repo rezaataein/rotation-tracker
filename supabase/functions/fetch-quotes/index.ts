@@ -155,7 +155,10 @@ Deno.serve(async (req) => {
           // Parse dates as UTC and convert to Unix timestamps
           const period1 = Math.floor(Date.parse(startDate + 'T00:00:00Z') / 1000);
           const period2 = Math.floor(Date.parse(endDate + 'T23:59:59Z') / 1000);
-          yahooUrl += `?period1=${period1}&period2=${period2}&interval=${interval}`;
+
+          // Add includePrePost for intraday intervals to get extended hours data
+          const isIntraday = ['1m', '5m', '15m', '30m', '60m'].includes(interval);
+          yahooUrl += `?period1=${period1}&period2=${period2}&interval=${interval}${isIntraday ? '&includePrePost=true' : ''}`;
 
           const response = await fetch(yahooUrl, {
             headers: { 'User-Agent': USER_AGENT }
@@ -173,21 +176,67 @@ Deno.serve(async (req) => {
           }
 
           const result = data.chart.result[0];
+
+          // Get arrays
+          const timestamps = result.timestamp || [];
+          const closes = result.indicators?.quote?.[0]?.close || [];
+
+          // Start with Yahoo's meta values
+          let regularMarketPrice = result.meta?.regularMarketPrice;
+          let regularMarketTime = result.meta?.regularMarketTime;
+          let preMarketPrice = null;
+          let preMarketTime = null;
+          let postMarketPrice = null;
+          let postMarketTime = null;
+
+          // If we have extended hours data, extract the last price and categorize it
+          if (isIntraday && timestamps.length > 0 && closes.length > 0) {
+            const lastIndex = closes.length - 1;
+            const lastTimestamp = timestamps[lastIndex];
+            const lastClose = closes[lastIndex];
+
+            if (lastTimestamp != null && lastClose != null) {
+              const periods = result.meta?.currentTradingPeriod;
+
+              if (periods) {
+                // Check which trading session the last timestamp falls in
+                if (lastTimestamp >= periods.post.start && lastTimestamp < periods.post.end) {
+                  // After-hours (4:00 PM - 8:00 PM ET)
+                  postMarketPrice = lastClose;
+                  postMarketTime = lastTimestamp;
+                } else if (lastTimestamp >= periods.pre.start && lastTimestamp < periods.pre.end) {
+                  // Pre-market (4:00 AM - 9:30 AM ET)
+                  preMarketPrice = lastClose;
+                  preMarketTime = lastTimestamp;
+                } else if (lastTimestamp >= periods.regular.start && lastTimestamp < periods.regular.end) {
+                  // Regular market hours (9:30 AM - 4:00 PM ET)
+                  regularMarketPrice = lastClose;
+                  regularMarketTime = lastTimestamp;
+                }
+              }
+            }
+          }
+
           return {
             symbol,
             valid: true,
             data: {
-              timestamps: result.timestamp || [],
+              timestamps: timestamps,
               open: result.indicators?.quote?.[0]?.open || [],
               high: result.indicators?.quote?.[0]?.high || [],
               low: result.indicators?.quote?.[0]?.low || [],
-              close: result.indicators?.quote?.[0]?.close || [],
+              close: closes,
               volume: result.indicators?.quote?.[0]?.volume || [],
               meta: {
                 currency: result.meta?.currency,
                 symbol: result.meta?.symbol,
                 exchangeName: result.meta?.exchangeName,
-                regularMarketPrice: result.meta?.regularMarketPrice
+                regularMarketPrice: regularMarketPrice,
+                regularMarketTime: regularMarketTime,
+                preMarketPrice: preMarketPrice,
+                preMarketTime: preMarketTime,
+                postMarketPrice: postMarketPrice,
+                postMarketTime: postMarketTime
               }
             }
           };

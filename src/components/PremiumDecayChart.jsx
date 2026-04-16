@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import * as LightweightCharts from 'lightweight-charts';
 import { supabase } from '../lib/supabase';
+import { createSmartTimeFormatter, createSmartTickFormatter } from '../lib/chartFormatters';
 import './Chart.css';
 
 export default function PremiumDecayChart({ position }) {
@@ -105,6 +106,7 @@ export default function PremiumDecayChart({ position }) {
         barSpacing: 6,
         fixLeftEdge: true,
         fixRightEdge: true,
+        shiftVisibleRangeOnNewBar: true,
       },
       handleScroll: {
         mouseWheel: true,
@@ -145,6 +147,19 @@ export default function PremiumDecayChart({ position }) {
     });
 
     lineSeries.setData(data);
+
+    // Apply smart time formatters based on data range
+    const timeFormatter = createSmartTimeFormatter(data);
+    const tickFormatter = createSmartTickFormatter(data);
+
+    chart.applyOptions({
+      localization: {
+        timeFormatter: timeFormatter,
+      },
+      timeScale: {
+        tickMarkFormatter: tickFormatter,
+      },
+    });
 
     // Add alert target line (horizontal)
     const targetData = data.map(d => ({

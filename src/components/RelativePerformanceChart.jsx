@@ -3,6 +3,8 @@ import * as LightweightCharts from 'lightweight-charts';
 import { fetchMultipleHistoricalPrices } from '../lib/yahooFinance';
 import { getTodayString } from '../lib/dateUtils';
 import { calculateRelativePerformance } from '../lib/calculations';
+import { getCurrentPrice } from '../lib/priceUtils';
+import { createSmartTimeFormatter, createSmartTickFormatter } from '../lib/chartFormatters';
 import './Chart.css';
 
 export default function RelativePerformanceChart({ position, onPricesLoaded }) {
@@ -48,8 +50,8 @@ export default function RelativePerformanceChart({ position, onPricesLoaded }) {
 
       // Pass current prices to parent if callback provided
       if (onPricesLoaded) {
-        const currentStockPrice = stockData.meta?.regularMarketPrice;
-        const currentBenchPrice = benchData.meta?.regularMarketPrice;
+        const currentStockPrice = getCurrentPrice(stockData.meta);
+        const currentBenchPrice = getCurrentPrice(benchData.meta);
         if (currentStockPrice && currentBenchPrice) {
           onPricesLoaded(currentStockPrice, currentBenchPrice);
         }
@@ -63,7 +65,7 @@ export default function RelativePerformanceChart({ position, onPricesLoaded }) {
         position.entry_bench_price
       );
 
-      // Render chart
+      // Render chart (data naturally includes extended hours from Yahoo)
       renderChart(relativePerformance, position.exit_threshold);
 
       setLoading(false);
@@ -104,6 +106,7 @@ export default function RelativePerformanceChart({ position, onPricesLoaded }) {
         barSpacing: 6,
         fixLeftEdge: true,
         fixRightEdge: true,
+        shiftVisibleRangeOnNewBar: true,
       },
       handleScroll: {
         mouseWheel: true,
@@ -143,6 +146,19 @@ export default function RelativePerformanceChart({ position, onPricesLoaded }) {
     });
 
     lineSeries.setData(data);
+
+    // Apply smart time formatters based on data range
+    const timeFormatter = createSmartTimeFormatter(data);
+    const tickFormatter = createSmartTickFormatter(data);
+
+    chart.applyOptions({
+      localization: {
+        timeFormatter: timeFormatter,
+      },
+      timeScale: {
+        tickMarkFormatter: tickFormatter,
+      },
+    });
 
     // Add exit threshold line (horizontal)
     const thresholdValue = exitThreshold * 100;

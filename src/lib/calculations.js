@@ -10,13 +10,20 @@
 export function calculateRelativePerformance(stockData, benchData, stockBaseline, benchBaseline) {
   const data = [];
 
-  // Ensure both arrays have same length (use minimum)
-  const minLength = Math.min(stockData.timestamps.length, benchData.timestamps.length);
+  // Create a map of benchmark timestamps to prices for efficient lookup
+  const benchMap = new Map();
+  for (let i = 0; i < benchData.timestamps.length; i++) {
+    benchMap.set(benchData.timestamps[i], benchData.close[i]);
+  }
 
-  for (let i = 0; i < minLength; i++) {
+  // Iterate through stock data and match with benchmark
+  for (let i = 0; i < stockData.timestamps.length; i++) {
     const timestamp = stockData.timestamps[i];
     const stockClose = stockData.close[i];
-    const benchClose = benchData.close[i];
+    const benchClose = benchMap.get(timestamp);
+
+    // Skip if no matching timestamp in benchmark data
+    if (benchClose === undefined) continue;
 
     // Skip invalid values (null, undefined, NaN)
     if (!isValidNumber(stockClose) || !isValidNumber(benchClose)) continue;
@@ -31,6 +38,8 @@ export function calculateRelativePerformance(stockData, benchData, stockBaseline
     // Verify spread is valid before adding
     if (!isValidNumber(spread)) continue;
 
+    // Yahoo returns Unix timestamps in UTC
+    // Lightweight-charts will display them in browser's local timezone
     data.push({
       time: timestamp,
       value: spread

@@ -3,6 +3,8 @@ import * as LightweightCharts from 'lightweight-charts';
 import { fetchMultipleHistoricalPrices } from '../lib/yahooFinance';
 import { getTodayString } from '../lib/dateUtils';
 import { calculateRelativePerformance } from '../lib/calculations';
+import { getCurrentPrice } from '../lib/priceUtils';
+import { createSmartTimeFormatter, createSmartTickFormatter } from '../lib/chartFormatters';
 import './Chart.css';
 
 export default function StrategyComparisonChart({ strategy, onDataLoaded }) {
@@ -70,9 +72,9 @@ export default function StrategyComparisonChart({ strategy, onDataLoaded }) {
         console.log('[StrategyChart] Actual days of data:', Math.floor(actualDays));
       }
 
-      // Get current prices
-      const currentStockPrice = stockData.meta?.regularMarketPrice;
-      const currentBenchPrice = benchData.meta?.regularMarketPrice;
+      // Get current prices (includes extended hours)
+      const currentStockPrice = getCurrentPrice(stockData.meta);
+      const currentBenchPrice = getCurrentPrice(benchData.meta);
 
       // Calculate current spread (relative performance)
       let currentSpread = null;
@@ -95,7 +97,7 @@ export default function StrategyComparisonChart({ strategy, onDataLoaded }) {
         });
       }
 
-      // Render chart
+      // Render chart (data naturally includes extended hours from Yahoo)
       renderChart(stockData, benchData, strategy);
 
       setLoading(false);
@@ -127,14 +129,6 @@ export default function StrategyComparisonChart({ strategy, onDataLoaded }) {
     );
 
     console.log('[StrategyChart] Spread data points:', spreadData.length);
-    if (spreadData.length > 0) {
-      const firstSpread = spreadData[0];
-      const lastSpread = spreadData[spreadData.length - 1];
-      const firstDate = new Date(firstSpread.time * 1000).toISOString().split('T')[0];
-      const lastDate = new Date(lastSpread.time * 1000).toISOString().split('T')[0];
-      console.log('[StrategyChart] Spread range:', firstDate, '(value:', firstSpread.value.toFixed(2) + '%) to', lastDate, '(value:', lastSpread.value.toFixed(2) + '%)');
-      console.log('[StrategyChart] Baseline prices - Stock:', stockBaseline, 'Bench:', benchBaseline);
-    }
 
     // Create new chart
     const chart = LightweightCharts.createChart(chartContainerRef.current, {
@@ -158,6 +152,7 @@ export default function StrategyComparisonChart({ strategy, onDataLoaded }) {
         barSpacing: 6,
         fixLeftEdge: true,
         fixRightEdge: true,
+        shiftVisibleRangeOnNewBar: true,
       },
       handleScroll: {
         mouseWheel: true,
@@ -196,6 +191,19 @@ export default function StrategyComparisonChart({ strategy, onDataLoaded }) {
       crosshairMarkerRadius: 4,
     });
     spreadSeries.setData(spreadData);
+
+    // Apply smart time formatters based on data range
+    const timeFormatter = createSmartTimeFormatter(spreadData);
+    const tickFormatter = createSmartTickFormatter(spreadData);
+
+    chart.applyOptions({
+      localization: {
+        timeFormatter: timeFormatter,
+      },
+      timeScale: {
+        tickMarkFormatter: tickFormatter,
+      },
+    });
 
     // Add entry threshold line (dashed horizontal line)
     const thresholdValue = strategy.entry_threshold * 100;
@@ -251,10 +259,6 @@ export default function StrategyComparisonChart({ strategy, onDataLoaded }) {
         from: 0,
         to: spreadData.length - 1,
       });
-
-      console.log('[StrategyChart] Visible range limited to', spreadData.length, 'data points');
-      console.log('[StrategyChart] User can scroll from', new Date(spreadData[0].time * 1000).toISOString().split('T')[0],
-                  'to', new Date(spreadData[spreadData.length - 1].time * 1000).toISOString().split('T')[0]);
     }
 
     // Handle resize

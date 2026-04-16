@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase';
 import { formatLocalDate, parseLocalDate, timestampToUTCDateString } from '../lib/dateUtils';
 import { fetchOptions } from '../lib/yahooFinance';
 import { updateCacheTickers } from '../lib/priceCache';
+import { getCurrentPrice } from '../lib/priceUtils';
 import RelativePerformanceChart from '../components/RelativePerformanceChart';
 import PremiumDecayChart from '../components/PremiumDecayChart';
 import ConfirmDialog from '../components/ConfirmDialog';
@@ -77,13 +78,15 @@ export default function PositionDetail({ user }) {
 
       console.log('Matching call:', matchingCall ? `Strike ${matchingCall.strike}, Bid ${matchingCall.bid}, Ask ${matchingCall.ask}` : 'Not found');
 
+      const stockPrice = getCurrentPrice(data.quote);
+
       setOptionData({
-        stockPrice: data.quote?.regularMarketPrice,
+        stockPrice: stockPrice,
         option: matchingCall
       });
 
       // Update cache with fresh option data
-      if (matchingCall && data.quote?.regularMarketPrice) {
+      if (matchingCall && stockPrice) {
         const optionKey = `${position.ticker}_${position.strike}_${position.expiration}`;
         updateCacheTickers({
           [optionKey]: {
@@ -91,7 +94,7 @@ export default function PositionDetail({ user }) {
             ask: matchingCall.ask || 0,
             mid: ((matchingCall.bid || 0) + (matchingCall.ask || 0)) / 2,
             lastPrice: matchingCall.lastPrice || 0,
-            stockPrice: data.quote.regularMarketPrice
+            stockPrice: stockPrice
           }
         });
         console.log('[PositionDetail] Updated cache with fresh option data:', optionKey);

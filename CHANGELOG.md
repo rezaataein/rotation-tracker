@@ -2,6 +2,51 @@
 
 All notable changes to Rotation Tracker will be documented in this file.
 
+## [0.9.0] - 2026-04-16
+
+### Fixed
+- **Extended Hours Data in Charts** - Charts now display pre-market and after-hours trading data
+  - Edge function includes extended hours when fetching intraday data (`includePrePost=true`)
+  - Populates `postMarketPrice` and `preMarketPrice` in meta from last array values
+  - Session detection using `currentTradingPeriod` (pre/regular/post)
+  - Charts automatically show all market hours (4:00 AM - 8:00 PM ET) for same-day positions
+  - After-hours price movements now visible in relative performance calculations
+  
+- **Timestamp Alignment Across Tickers** - Fixed spread calculation for mismatched data points
+  - Changed from index-based to timestamp-based matching using Map lookup
+  - Handles cases where stock has more data than benchmark (e.g., NFLX 889 points vs VGT 638 points)
+  - Only calculates spread when both tickers have data at exact same timestamp
+  - Prevents chart from cutting off early when benchmark has fewer data points
+  - Applies to both RelativePerformanceChart and StrategyComparisonChart
+
+- **Universal Timezone Display** - Charts now correctly show local time for all users worldwide
+  - Created smart time formatters that adapt based on data range
+  - Intraday (< 2 days): Shows time only → "4:00 PM"
+  - Multi-day intraday (2-60 days): Shows date + time → "Apr 16, 4:00 PM"
+  - Long-term daily (60+ days): Shows date only → "Apr 16"
+  - Very long-term (> 365 days): Adds year → "Apr 16, 2026"
+  - Works correctly for users in any timezone (EDT, GMT, JST, etc.)
+  - Both x-axis labels and crosshair tooltips use consistent formatting
+
+### Added
+- **Smart Chart Formatters** - `src/lib/chartFormatters.js`
+  - `createSmartTimeFormatter()` - Adapts tooltip format to data range
+  - `createSmartTickFormatter()` - Adapts axis label format to data range
+  - Automatically detects time span and chooses appropriate format
+  - Applied to all chart components (RelativePerformanceChart, StrategyComparisonChart, PremiumDecayChart)
+
+### Changed
+- **Spread Calculation** - `src/lib/calculations.js` refactored for accuracy
+  - Now uses Map-based timestamp matching instead of array indices
+  - Skips stock data points where benchmark has no matching timestamp
+  - More robust handling of misaligned data from Yahoo Finance
+
+### Technical
+- Edge function extended hours logic: extracts last timestamp/close from arrays when `includePrePost=true`
+- Timestamp matching prevents assumption that `stockData[i]` matches `benchData[i]`
+- All Unix timestamps remain in UTC (seconds since epoch) throughout pipeline
+- Formatters use `toLocaleTimeString()` and `toLocaleDateString()` for automatic timezone conversion
+
 ## [0.8.0] - 2026-04-16
 
 ### Added

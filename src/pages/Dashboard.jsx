@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { fetchOptions } from '../lib/yahooFinance';
 import { getCacheTicker, updateCacheTicker, updateCacheTickers, getOldestCacheTimestamp, getOldestCacheTimestampForTickers, getFreshnessClass, formatCacheTime } from '../lib/priceCache';
+import { getCurrentPrice } from '../lib/priceUtils';
 import './Dashboard.css';
 
 export default function Dashboard({ user, refreshKey }) {
@@ -62,12 +63,6 @@ export default function Dashboard({ user, refreshKey }) {
           tickers.add(position.benchmark);
         }
       });
-
-
-      if (tickers.size === 0) {
-        setPricesLoading(false);
-        return;
-      }
 
       const tickersArray = Array.from(tickers);
       const tickersToFetch = [];
@@ -136,7 +131,7 @@ export default function Dashboard({ user, refreshKey }) {
         const cacheUpdates = {};
 
         results.forEach(result => {
-          const price = result.meta?.regularMarketPrice;
+          const price = getCurrentPrice(result.meta);
           if (price) {
             newPrices[result.symbol] = price;
             cacheUpdates[result.symbol] = { price };
@@ -156,6 +151,12 @@ export default function Dashboard({ user, refreshKey }) {
 
       // --- COVERED CALLS: Fetch option data ---
       const coveredCalls = positions.filter(p => p.type === 'covered_call');
+
+      // Early return only if no stocks AND no options to fetch
+      if (tickersArray.length === 0 && coveredCalls.length === 0) {
+        setPricesLoading(false);
+        return;
+      }
 
       if (coveredCalls.length > 0) {
         const optionsToFetch = [];
@@ -195,7 +196,7 @@ export default function Dashboard({ user, refreshKey }) {
                   ask: contract.ask || 0,
                   mid: ((contract.bid || 0) + (contract.ask || 0)) / 2,
                   lastPrice: contract.lastPrice || 0,
-                  stockPrice: data.quote?.regularMarketPrice || 0
+                  stockPrice: getCurrentPrice(data.quote) || 0
                 };
 
 

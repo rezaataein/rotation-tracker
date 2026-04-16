@@ -10,6 +10,7 @@ import {
   saveSubscriptionToDatabase,
   removeSubscriptionFromDatabase
 } from '../lib/pushNotifications';
+import packageInfo from '../../package.json';
 import './Settings.css';
 
 export default function Settings({ user }) {
@@ -218,7 +219,7 @@ export default function Settings({ user }) {
           </div>
           <div className="setting-item">
             <div className="setting-label">Version</div>
-            <div className="setting-value">0.7.0</div>
+            <div className="setting-value">{packageInfo.version}</div>
           </div>
           <div className="setting-item">
             <div className="setting-label">Build Date</div>

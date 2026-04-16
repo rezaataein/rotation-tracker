@@ -9,6 +9,7 @@ import {
   getFreshnessClass,
   formatCacheTime
 } from '../lib/priceCache';
+import { getCurrentPrice } from '../lib/priceUtils';
 import './Scanner.css';
 import './Dashboard.css'; // Reuse Dashboard styles for price displays
 
@@ -128,7 +129,7 @@ export default function Scanner({ user, refreshKey }) {
         const fetchedPrices = {};
         const results = data.quoteResponse?.result || [];
         results.forEach(result => {
-          const price = result.meta?.regularMarketPrice;
+          const price = getCurrentPrice(result.meta);
           if (price) {
             fetchedPrices[result.symbol] = price;
           }
