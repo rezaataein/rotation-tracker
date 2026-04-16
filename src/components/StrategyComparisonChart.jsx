@@ -35,6 +35,13 @@ export default function StrategyComparisonChart({ strategy, onDataLoaded }) {
       startDate.setDate(startDate.getDate() - strategy.lookback_days);
       const startDateString = startDate.toISOString().split('T')[0];
 
+      console.log('[StrategyChart] Fetching data:');
+      console.log('  Strategy:', strategy.ticker, 'vs', strategy.benchmark);
+      console.log('  Lookback days:', strategy.lookback_days);
+      console.log('  Start date:', startDateString);
+      console.log('  End date:', today);
+      console.log('  Expected days:', strategy.lookback_days);
+
       // Fetch both stock and benchmark data
       const results = await fetchMultipleHistoricalPrices(
         [strategy.ticker, strategy.benchmark],
@@ -42,11 +49,25 @@ export default function StrategyComparisonChart({ strategy, onDataLoaded }) {
         today
       );
 
+      console.log('[StrategyChart] Data received:', results.length, 'tickers');
+
       const stockData = results.find(r => r.symbol === strategy.ticker);
       const benchData = results.find(r => r.symbol === strategy.benchmark);
 
       if (!stockData || !benchData) {
         throw new Error('Failed to fetch price data');
+      }
+
+      console.log('[StrategyChart] Stock data points:', stockData.timestamps?.length || 0);
+      console.log('[StrategyChart] Benchmark data points:', benchData.timestamps?.length || 0);
+
+      if (stockData.timestamps && stockData.timestamps.length > 0) {
+        const firstDate = new Date(stockData.timestamps[0] * 1000).toISOString().split('T')[0];
+        const lastDate = new Date(stockData.timestamps[stockData.timestamps.length - 1] * 1000).toISOString().split('T')[0];
+        console.log('[StrategyChart] Date range received:', firstDate, 'to', lastDate);
+
+        const actualDays = (stockData.timestamps[stockData.timestamps.length - 1] - stockData.timestamps[0]) / 86400;
+        console.log('[StrategyChart] Actual days of data:', Math.floor(actualDays));
       }
 
       // Get current prices
@@ -105,6 +126,16 @@ export default function StrategyComparisonChart({ strategy, onDataLoaded }) {
       benchBaseline
     );
 
+    console.log('[StrategyChart] Spread data points:', spreadData.length);
+    if (spreadData.length > 0) {
+      const firstSpread = spreadData[0];
+      const lastSpread = spreadData[spreadData.length - 1];
+      const firstDate = new Date(firstSpread.time * 1000).toISOString().split('T')[0];
+      const lastDate = new Date(lastSpread.time * 1000).toISOString().split('T')[0];
+      console.log('[StrategyChart] Spread range:', firstDate, '(value:', firstSpread.value.toFixed(2) + '%) to', lastDate, '(value:', lastSpread.value.toFixed(2) + '%)');
+      console.log('[StrategyChart] Baseline prices - Stock:', stockBaseline, 'Bench:', benchBaseline);
+    }
+
     // Create new chart
     const chart = LightweightCharts.createChart(chartContainerRef.current, {
       width: chartContainerRef.current.clientWidth,
@@ -123,20 +154,33 @@ export default function StrategyComparisonChart({ strategy, onDataLoaded }) {
       timeScale: {
         borderColor: '#e0e0e0',
         timeVisible: true,
+        rightOffset: 5,
+        barSpacing: 6,
+        fixLeftEdge: true,
+        fixRightEdge: true,
       },
       handleScroll: {
-        mouseWheel: false,
-        pressedMouseMove: false,
-        horzTouchDrag: false,
+        mouseWheel: true,
+        pressedMouseMove: true,
+        horzTouchDrag: true,
         vertTouchDrag: false,
       },
       handleScale: {
-        axisPressedMouseMove: false,
-        mouseWheel: false,
-        pinch: false,
+        axisPressedMouseMove: true,
+        mouseWheel: true,
+        pinch: true,
       },
       crosshair: {
         mode: LightweightCharts.CrosshairMode.Normal,
+        vertLine: {
+          width: 1,
+          color: 'rgba(37, 99, 235, 0.5)',
+          style: 0,
+          labelBackgroundColor: '#2563eb',
+        },
+        horzLine: {
+          visible: false, // Hide default horizontal line
+        },
       },
     });
 
@@ -148,6 +192,8 @@ export default function StrategyComparisonChart({ strategy, onDataLoaded }) {
         type: 'custom',
         formatter: (price) => `${price.toFixed(2)}%`,
       },
+      crosshairMarkerVisible: true,
+      crosshairMarkerRadius: 4,
     });
     spreadSeries.setData(spreadData);
 
@@ -169,10 +215,47 @@ export default function StrategyComparisonChart({ strategy, onDataLoaded }) {
     });
     thresholdSeries.setData(thresholdData);
 
-    // Fit content
-    chart.timeScale().fitContent();
-
     chartRef.current = chart;
+
+    // Add dynamic price line that follows series value at crosshair position
+    let currentPriceLine = null;
+    chart.subscribeCrosshairMove((param) => {
+      // Remove previous price line
+      if (currentPriceLine) {
+        spreadSeries.removePriceLine(currentPriceLine);
+        currentPriceLine = null;
+      }
+
+      // Add new price line at series value if hovering
+      if (param.time && param.seriesData && param.seriesData.size > 0) {
+        const spreadValue = param.seriesData.get(spreadSeries);
+        if (spreadValue) {
+          currentPriceLine = spreadSeries.createPriceLine({
+            price: spreadValue.value,
+            color: '#a855f7',
+            lineWidth: 1,
+            lineStyle: 0,
+            axisLabelVisible: true,
+            title: '',
+            axisLabelColor: '#a855f7',
+            axisLabelTextColor: '#ffffff',
+          });
+        }
+      }
+    });
+
+    // Set visible logical range to limit scrolling to actual data
+    if (spreadData.length > 0) {
+      // Restrict scrollable range to actual data boundaries
+      chart.timeScale().setVisibleLogicalRange({
+        from: 0,
+        to: spreadData.length - 1,
+      });
+
+      console.log('[StrategyChart] Visible range limited to', spreadData.length, 'data points');
+      console.log('[StrategyChart] User can scroll from', new Date(spreadData[0].time * 1000).toISOString().split('T')[0],
+                  'to', new Date(spreadData[spreadData.length - 1].time * 1000).toISOString().split('T')[0]);
+    }
 
     // Handle resize
     const handleResize = () => {

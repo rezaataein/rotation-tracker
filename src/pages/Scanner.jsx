@@ -7,6 +7,7 @@ export default function Scanner({ user, refreshKey }) {
   const navigate = useNavigate();
   const [strategies, setStrategies] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [statusFilter, setStatusFilter] = useState('all'); // 'all', 'active', 'paused'
 
   useEffect(() => {
     fetchStrategies();
@@ -29,26 +30,14 @@ export default function Scanner({ user, refreshKey }) {
     }
   };
 
-  const handleToggleActive = async (e, strategyId, currentActive) => {
-    e.stopPropagation(); // Prevent card click navigation
+  const filteredStrategies = strategies.filter(strategy => {
+    // Status filter
+    const statusMatch = statusFilter === 'all' ||
+                       (statusFilter === 'active' && strategy.active) ||
+                       (statusFilter === 'paused' && !strategy.active);
 
-    try {
-      const { error } = await supabase
-        .from('strategies')
-        .update({ active: !currentActive })
-        .eq('id', strategyId);
-
-      if (error) throw error;
-
-      // Update local state
-      setStrategies(strategies.map(s =>
-        s.id === strategyId ? { ...s, active: !currentActive } : s
-      ));
-    } catch (error) {
-      console.error('Error toggling strategy:', error);
-    }
-  };
-
+    return statusMatch;
+  });
 
   if (loading) {
     return (
@@ -83,27 +72,37 @@ export default function Scanner({ user, refreshKey }) {
         </div>
       ) : (
         <>
-          <div className="strategies-info">
-            <p>
-              {strategies.filter(s => s.active).length} active{' '}
-              • Checks at 9:30am, 12:30pm, and 3:30pm ET
-            </p>
+          {/* Status Filter */}
+          <div className="filter-tabs">
+            <button
+              className={statusFilter === 'all' ? 'active' : ''}
+              onClick={() => setStatusFilter('all')}
+            >
+              All
+            </button>
+            <button
+              className={statusFilter === 'active' ? 'active' : ''}
+              onClick={() => setStatusFilter('active')}
+            >
+              Active
+            </button>
+            <button
+              className={statusFilter === 'paused' ? 'active' : ''}
+              onClick={() => setStatusFilter('paused')}
+            >
+              Paused
+            </button>
           </div>
 
           <div className="strategy-list">
-            {strategies.map(strategy => (
+            {filteredStrategies.map(strategy => (
               <div
                 key={strategy.id}
                 className={`strategy-card ${!strategy.active ? 'inactive' : ''}`}
                 onClick={() => navigate(`/strategy/${strategy.id}`)}
               >
                 <div className="strategy-header">
-                  <div className="strategy-title">
-                    <h3>{strategy.name}</h3>
-                    <span className={`status-badge ${strategy.active ? 'active' : 'inactive'}`}>
-                      {strategy.active ? 'Active' : 'Inactive'}
-                    </span>
-                  </div>
+                  <h3>{strategy.name}</h3>
                 </div>
 
                 <div className="strategy-body">
@@ -139,15 +138,6 @@ export default function Scanner({ user, refreshKey }) {
                       ⚡ Last signal: {new Date(strategy.last_signal_date).toLocaleDateString()}
                     </div>
                   )}
-                </div>
-
-                <div className="strategy-actions">
-                  <button
-                    className={`toggle-button ${strategy.active ? 'active' : 'inactive'}`}
-                    onClick={(e) => handleToggleActive(e, strategy.id, strategy.active)}
-                  >
-                    {strategy.active ? '⏸️ Pause' : '▶️ Activate'}
-                  </button>
                 </div>
               </div>
             ))}

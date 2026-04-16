@@ -101,20 +101,33 @@ export default function PremiumDecayChart({ position }) {
       timeScale: {
         borderColor: '#e0e0e0',
         timeVisible: true,
+        rightOffset: 5,
+        barSpacing: 6,
+        fixLeftEdge: true,
+        fixRightEdge: true,
       },
       handleScroll: {
-        mouseWheel: false,
-        pressedMouseMove: false,
-        horzTouchDrag: false,
+        mouseWheel: true,
+        pressedMouseMove: true,
+        horzTouchDrag: true,
         vertTouchDrag: false,
       },
       handleScale: {
-        axisPressedMouseMove: false,
-        mouseWheel: false,
-        pinch: false,
+        axisPressedMouseMove: true,
+        mouseWheel: true,
+        pinch: true,
       },
       crosshair: {
         mode: LightweightCharts.CrosshairMode.Normal,
+        vertLine: {
+          width: 1,
+          color: 'rgba(37, 99, 235, 0.5)',
+          style: 0,
+          labelBackgroundColor: '#2563eb',
+        },
+        horzLine: {
+          visible: false, // Hide default horizontal line
+        },
       },
     });
 
@@ -127,6 +140,8 @@ export default function PremiumDecayChart({ position }) {
         precision: 2,
         minMove: 0.01,
       },
+      crosshairMarkerVisible: true,
+      crosshairMarkerRadius: 4,
     });
 
     lineSeries.setData(data);
@@ -153,10 +168,42 @@ export default function PremiumDecayChart({ position }) {
       targetSeries.setData(targetData);
     }
 
-    // Fit content
-    chart.timeScale().fitContent();
+    // Default view with scrollable range limited to actual data
+    if (data.length > 0) {
+      chart.timeScale().setVisibleLogicalRange({
+        from: 0,
+        to: data.length - 1,
+      });
+    }
 
     chartRef.current = chart;
+
+    // Add dynamic price line that follows series value at crosshair position
+    let currentPriceLine = null;
+    chart.subscribeCrosshairMove((param) => {
+      // Remove previous price line
+      if (currentPriceLine) {
+        lineSeries.removePriceLine(currentPriceLine);
+        currentPriceLine = null;
+      }
+
+      // Add new price line at series value if hovering
+      if (param.time && param.seriesData && param.seriesData.size > 0) {
+        const premiumValue = param.seriesData.get(lineSeries);
+        if (premiumValue) {
+          currentPriceLine = lineSeries.createPriceLine({
+            price: premiumValue.value,
+            color: '#a855f7',
+            lineWidth: 1,
+            lineStyle: 0,
+            axisLabelVisible: true,
+            title: '',
+            axisLabelColor: '#a855f7',
+            axisLabelTextColor: '#ffffff',
+          });
+        }
+      }
+    });
 
     // Handle resize
     const handleResize = () => {

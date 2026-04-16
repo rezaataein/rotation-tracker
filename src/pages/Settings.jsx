@@ -137,11 +137,24 @@ export default function Settings({ user }) {
         {/* Notifications Section */}
         <section className="settings-section">
           <h2>Notifications</h2>
+
+          <div className="info-note" style={{ marginBottom: '1rem' }}>
+            <strong>Automated Monitoring Schedule</strong>
+            <p style={{ marginTop: '0.5rem', marginBottom: 0 }}>
+              Your active strategies and positions are checked automatically <strong>3 times daily</strong> during market hours:
+            </p>
+            <ul style={{ marginTop: '0.5rem', marginBottom: 0, paddingLeft: '1.25rem' }}>
+              <li><strong>9:30 AM ET</strong> - Market open check</li>
+              <li><strong>12:30 PM ET</strong> - Midday check</li>
+              <li><strong>3:30 PM ET</strong> - Near market close check</li>
+            </ul>
+          </div>
+
           <div className="setting-item">
             <div className="setting-info">
-              <div className="setting-label">Trading Signal Alerts</div>
+              <div className="setting-label">Push Notifications</div>
               <div className="setting-description">
-                Get notified when your strategies and positions need action
+                Receive instant alerts on this device when monitoring detects actionable signals
               </div>
             </div>
             <label className="toggle-switch">
@@ -163,18 +176,24 @@ export default function Settings({ user }) {
 
           {!notificationsEnabled && !notificationError && (
             <div className="info-note" style={{ marginTop: '1rem' }}>
-              <strong>Enable push notifications</strong> to receive instant alerts when:
+              <strong>What you'll be notified about:</strong>
               <ul style={{ marginTop: '0.5rem', marginBottom: 0, paddingLeft: '1.25rem' }}>
-                <li>A strategy signals an entry opportunity (ticker underperforms)</li>
-                <li>A stock position reaches exit threshold (time to swap back)</li>
-                <li>A covered call premium drops to your buyback target</li>
+                <li><strong>Strategy Entry Signals:</strong> When a stock underperforms its benchmark beyond your entry threshold (BUY opportunity)</li>
+                <li><strong>Position Exit Signals:</strong> When a stock rotation position recovers to your exit threshold (time to swap back to benchmark)</li>
+                <li><strong>Covered Call Buybacks:</strong> When an option premium decays to your alert target (buyback opportunity)</li>
               </ul>
+              <p style={{ marginTop: '0.75rem', marginBottom: 0, fontSize: '0.875rem', opacity: 0.8 }}>
+                💡 Note: Each device/browser needs its own notification subscription. Enable on all devices you want to receive alerts on.
+              </p>
             </div>
           )}
 
           {notificationsEnabled && !notificationError && (
-            <div className="info-note" style={{ marginTop: '1rem', backgroundColor: '#d1fae5' }}>
-              <strong>✓ Notifications enabled!</strong> You'll receive alerts 3x daily during market hours when signals are triggered.
+            <div className="info-note" style={{ marginTop: '1rem', backgroundColor: '#d1fae5', borderColor: '#86efac' }}>
+              <strong>✓ Notifications enabled on this device!</strong>
+              <p style={{ marginTop: '0.5rem', marginBottom: 0 }}>
+                You'll receive alerts during the 3 daily checks when your active strategies and positions trigger signals.
+              </p>
             </div>
           )}
         </section>
@@ -199,7 +218,7 @@ export default function Settings({ user }) {
           </div>
           <div className="setting-item">
             <div className="setting-label">Version</div>
-            <div className="setting-value">0.6.3</div>
+            <div className="setting-value">0.7.0</div>
           </div>
           <div className="setting-item">
             <div className="setting-label">Build Date</div>

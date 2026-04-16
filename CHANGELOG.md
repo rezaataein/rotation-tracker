@@ -2,6 +2,46 @@
 
 All notable changes to Rotation Tracker will be documented in this file.
 
+## [0.7.0] - 2026-04-16
+
+### Added
+- **Scanner Status Filter** - Added status filter (All/Active/Paused) to Strategy Scanner page
+  - Matches position dashboard functionality for consistency
+  - Allows quick filtering of active vs paused strategies
+
+### Changed
+- **Chart Hover Improvements** - Enhanced all chart components with better crosshair behavior
+  - Y-axis label now shows the actual graph value (not mouse position)
+  - Purple label background makes hover values stand out
+  - Applies to Strategy Comparison, Relative Performance, and Premium Decay charts
+  
+- **Simplified Dashboard Cards** - Removed pause/activate buttons from card views
+  - Buttons remain available in detail pages for position/strategy management
+  - Cleaner card layout focuses on key information
+  - Color/opacity still indicates active vs paused status
+  
+- **Scanner Card Cleanup** - Removed status badge from strategy cards
+  - Status is clear from filter selection and card styling
+  - Reduced visual clutter
+  
+- **Filter Reorganization**
+  - **Positions Dashboard:** Swapped filter order - Status filter now Row 1, Type filter Row 2
+  - **Strategy Scanner:** Status filter added as Row 1
+  - More logical hierarchy with status as primary filter
+  
+- **Settings Notifications Rewrite** - Completely rewrote Notifications section for clarity
+  - Added monitoring schedule details (3x daily: 9:30am, 12:30pm, 3:30pm ET)
+  - Clearer explanations of what triggers each alert type
+  - Better descriptions of strategy entry, position exit, and covered call buyback signals
+  - Note about each device needing its own notification subscription
+  - Moved schedule info from Scanner page banner to Settings
+
+### Removed
+- Pause/activate buttons from Dashboard position cards
+- Pause/activate buttons from Scanner strategy cards
+- Status badge from Scanner strategy cards
+- Schedule banner from Scanner page (moved to Settings)
+
 ## [0.6.3] - 2026-04-15
 
 ### Fixed

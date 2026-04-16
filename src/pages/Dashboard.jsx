@@ -31,26 +31,6 @@ export default function Dashboard({ user, refreshKey }) {
     }
   };
 
-  const handleToggleActive = async (e, positionId, currentActive) => {
-    e.stopPropagation(); // Prevent card click navigation
-
-    try {
-      const { error } = await supabase
-        .from('positions')
-        .update({ active: !currentActive })
-        .eq('id', positionId);
-
-      if (error) throw error;
-
-      // Update local state
-      setPositions(positions.map(p =>
-        p.id === positionId ? { ...p, active: !currentActive } : p
-      ));
-    } catch (error) {
-      console.error('Error toggling position:', error);
-    }
-  };
-
   const filteredPositions = positions.filter(position => {
     // Type filter
     const typeMatch = typeFilter === 'all' || position.type === typeFilter;
@@ -88,6 +68,28 @@ export default function Dashboard({ user, refreshKey }) {
         </div>
       ) : (
         <>
+          {/* Status Filter */}
+          <div className="filter-tabs">
+            <button
+              className={statusFilter === 'all' ? 'active' : ''}
+              onClick={() => setStatusFilter('all')}
+            >
+              All
+            </button>
+            <button
+              className={statusFilter === 'active' ? 'active' : ''}
+              onClick={() => setStatusFilter('active')}
+            >
+              Active
+            </button>
+            <button
+              className={statusFilter === 'paused' ? 'active' : ''}
+              onClick={() => setStatusFilter('paused')}
+            >
+              Paused
+            </button>
+          </div>
+
           {/* Type Filter */}
           <div className="filter-tabs">
             <button
@@ -107,28 +109,6 @@ export default function Dashboard({ user, refreshKey }) {
               onClick={() => setTypeFilter('covered_call')}
             >
               Covered Calls
-            </button>
-          </div>
-
-          {/* Status Filter */}
-          <div className="filter-tabs status-filter">
-            <button
-              className={statusFilter === 'all' ? 'active' : ''}
-              onClick={() => setStatusFilter('all')}
-            >
-              All
-            </button>
-            <button
-              className={statusFilter === 'active' ? 'active' : ''}
-              onClick={() => setStatusFilter('active')}
-            >
-              Active
-            </button>
-            <button
-              className={statusFilter === 'paused' ? 'active' : ''}
-              onClick={() => setStatusFilter('paused')}
-            >
-              Paused
             </button>
           </div>
 
@@ -152,14 +132,6 @@ export default function Dashboard({ user, refreshKey }) {
                   {position.type === 'covered_call' && (
                     <p>${position.strike} - {position.expiration}</p>
                   )}
-                </div>
-                <div className="position-actions">
-                  <button
-                    className={`toggle-button ${position.active ? 'active' : 'inactive'}`}
-                    onClick={(e) => handleToggleActive(e, position.id, position.active)}
-                  >
-                    {position.active ? '⏸️ Pause' : '▶️ Activate'}
-                  </button>
                 </div>
               </div>
             ))}
