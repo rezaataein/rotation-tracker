@@ -292,7 +292,44 @@ Total time: 1-3 seconds (depending on network)
 
 ---
 
-### **Flow 2: User Views Position Detail**
+### **Flow 2: User Views Dashboard (with Caching)**
+
+```
+User opens Dashboard
+  ↓
+Component mounts, reads positions from Supabase DB
+  ↓
+Collect all required tickers:
+  - Stock rotation: [stock, benchmark] pairs
+  - Covered calls: [stock, option data]
+  - Total: ~10-40 tickers typically
+  ↓
+Check sessionStorage cache for each ticker:
+  ├─ Cached & fresh (<5 min) → Add to cachedData
+  └─ Missing or stale (>5 min) → Add to staleTickers
+  ↓
+Render cards immediately with:
+  - Static DB data (ticker, config, status)
+  - Cached prices if available
+  - "Loading..." for stale/missing tickers
+  ↓
+Batch fetch stale tickers (if any):
+  - Stock quotes: fetchQuotes([...staleTickers]) → ONE API call
+  - Options: fetchOptions(ticker, expiration) → Per covered call
+  ↓
+Update sessionStorage with fresh data + timestamps
+  ↓
+Update cards sequentially (top to bottom):
+  - Calculate spreads
+  - Determine signal status (ENTRY/SWAP/BUYBACK)
+  - Re-render with live data + signal badges
+  ↓
+Update global timestamp (shows oldest ticker time)
+  ↓
+Total time: 0 sec (all cached) to 3 sec (cold load)
+```
+
+### **Flow 3: User Views Position Detail**
 
 ```
 User taps NVDA position card
@@ -300,8 +337,14 @@ User taps NVDA position card
 Frontend fetches position from Supabase
   ↓
 Frontend requests historical prices:
-  - fetchYahooHistory('NVDA', entry_date, today)
-  - fetchYahooHistory('VGT', entry_date, today)
+  - fetchMultipleHistoricalPrices(['NVDA', 'VGT'], entry_date, today)
+  ↓
+Extract current prices from historical response:
+  - stockData.meta.regularMarketPrice
+  - benchData.meta.regularMarketPrice
+  ↓
+Update sessionStorage cache with fresh prices:
+  - updateCacheTickers({ 'NVDA': {...}, 'VGT': {...} })
   ↓
 Calculate spread: stock_return - bench_return for each day
   ↓
@@ -311,9 +354,13 @@ Render TradingView chart with:
   - Entry marker
   ↓
 Display to user (<2 sec total)
+  ↓
+User navigates back to Dashboard:
+  → NVDA & VGT prices now cached and fresh
+  → Dashboard loads instantly with cached data
 ```
 
-### **Flow 3: Cron Checks Positions**
+### **Flow 4: Cron Checks Positions**
 
 ```
 GitHub Actions triggers (9am ET)
@@ -354,7 +401,7 @@ FOR EACH user:
 Script completes (5-10 min for 100 users)
 ```
 
-### **Flow 4: Push Notification**
+### **Flow 5: Push Notification**
 
 ```
 Cron detects signal
@@ -503,6 +550,119 @@ Dashboard (authenticated)
 **Position Detail:** (not built yet)
 - Shows chart, current prices, P&L
 - Edit/Delete buttons
+
+---
+
+## 💰 **Frontend Price Caching Strategy**
+
+### **Overview**
+
+Dashboard and Scanner pages display real-time prices, spreads, and signals by fetching from Yahoo Finance on the frontend. To optimize performance and reduce API calls, we use intelligent per-ticker caching.
+
+### **Cache Design**
+
+**Storage:** `sessionStorage` (clears on page refresh, persists during navigation)
+
+**Structure:**
+```javascript
+{
+  // Stock quotes
+  'NVDA': { 
+    price: 850.23, 
+    timestamp: 1745684055000,
+    source: 'dashboard' | 'detail_page'
+  },
+  
+  // Options data (key: ticker_strike_expiration)
+  'AAPL_180_2026-02-21': { 
+    stockPrice: 182.50,
+    bid: 0.82,
+    ask: 0.88,
+    mid: 0.85,
+    timestamp: 1745684000000,
+    source: 'detail_page'
+  }
+}
+```
+
+**TTL:** 5 minutes per ticker (individual timestamps)
+
+### **Why sessionStorage?**
+
+| Behavior | localStorage | sessionStorage ✅ |
+|----------|-------------|------------------|
+| Page refresh (F5) | Cache persists, need logic to detect refresh | Cleared automatically → always fresh |
+| Navigate away & back | Cache persists | Cache persists |
+| Close tab & reopen | Stale cache persists | Cleared → fresh data |
+| Multiple tabs | Shared cache (confusing) | Independent per tab |
+
+**Decision:** sessionStorage provides "F5 = fresh data" behavior automatically without complex refresh detection logic.
+
+### **Cache Flow**
+
+**Dashboard Load:**
+```javascript
+1. Check sessionStorage for each required ticker
+2. Use cached if <5 min old, otherwise mark stale
+3. Render cards with static DB data + "Loading..." for prices
+4. Batch fetch stale tickers: fetchQuotes([...staleTickers])
+5. Update sessionStorage with fresh data
+6. Re-render cards with live prices
+```
+
+**Detail Page Visit:**
+```javascript
+1. Fetch historical data for chart
+2. Extract current price from historical response
+3. Update sessionStorage for those tickers
+4. When user navigates back, Dashboard uses fresh cached data
+```
+
+**Partial Cache Refresh:**
+```
+Dashboard has 10 tickers
+- 4 tickers cached fresh (from detail page visit)
+- 6 tickers stale (>5 min old)
+→ Only fetch 6 stale tickers (saves 4 API calls!)
+```
+
+### **API Call Optimization**
+
+**Example: 10 positions (5 stock rotation, 3 covered calls, 2 strategies)**
+
+**Cold Load (no cache):**
+- 1x `fetchQuotes([...14 stock tickers])` → ONE call
+- 3x `fetchOptions(ticker, expiration)` → THREE calls
+- **Total: 4 API calls in ~2-3 seconds**
+
+**Warm Load (partial cache):**
+- 8 tickers cached, 6 stale
+- 1x `fetchQuotes([...6 stale tickers])` → ONE call
+- 2x `fetchOptions(...)` (1 cached)
+- **Total: 3 API calls in ~1-2 seconds**
+
+**Hot Load (all cached from detail page visit):**
+- All tickers fresh in cache
+- **Total: 0 API calls, instant render**
+
+### **Timestamp Display**
+
+**Global indicator showing oldest cached data:**
+```jsx
+<div className="price-status-bar sticky">
+  <span className="timestamp fresh">
+    🟢 Last updated at 2:34 PM
+  </span>
+  <button onClick={refreshAll}>🔄 Refresh</button>
+</div>
+```
+
+**Color codes:**
+- 🟢 Green: <2 min (fresh)
+- 🟡 Yellow: 2-5 min (recent)
+- 🔴 Red: >5 min (stale, click refresh)
+
+**Shows exact time** (not "2 min ago") to avoid staleness confusion.
 
 ---
 
