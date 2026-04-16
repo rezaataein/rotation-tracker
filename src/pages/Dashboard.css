@@ -258,6 +258,216 @@
   transform: scale(0.95);
 }
 
+/* Price Status Bar */
+.price-status-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  background: white;
+  border-bottom: 1px solid #e5e7eb;
+  font-size: 0.875rem;
+}
+
+.timestamp {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 500;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.timestamp.fresh .status-dot {
+  background: #10b981; /* Green */
+}
+
+.timestamp.recent .status-dot {
+  background: #f59e0b; /* Yellow */
+}
+
+.timestamp.stale .status-dot {
+  background: #ef4444; /* Red */
+}
+
+.timestamp.fresh {
+  color: #059669;
+}
+
+.timestamp.recent {
+  color: #d97706;
+}
+
+.timestamp.stale {
+  color: #dc2626;
+}
+
+.refresh-button {
+  padding: 0.5rem 1rem;
+  background: #f3f4f6;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: #374151;
+}
+
+.refresh-button:hover:not(:disabled) {
+  background: #e5e7eb;
+  border-color: #d1d5db;
+}
+
+.refresh-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Position Card - Common */
+.prices-label {
+  margin-bottom: 0.75rem;
+  color: #374151;
+  font-size: 0.9375rem;
+  font-weight: 600;
+}
+
+/* Position Card - Stock Rotation Details */
+.benchmark-label {
+  margin-bottom: 0.75rem;
+  color: #6b7280;
+  font-size: 0.875rem;
+}
+
+/* Position Card - Covered Call Details */
+.option-details {
+  margin-bottom: 0.75rem;
+  color: #6b7280;
+  font-size: 0.875rem;
+}
+
+.expiration-label {
+  margin-top: -0.5rem;
+  margin-bottom: 0.75rem;
+  color: #9ca3af;
+  font-size: 0.8125rem;
+}
+
+.premium-display {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-top: 0.5rem;
+  padding: 0.5rem;
+  background: #f9fafb;
+  border-radius: 0.375rem;
+}
+
+.premium-label {
+  font-size: 0.875rem;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.premium-flow {
+  font-size: 0.9375rem;
+  color: #374151;
+  font-weight: 600;
+}
+
+.premium-change {
+  font-size: 0.875rem;
+  font-weight: 700;
+}
+
+.premium-change.positive {
+  color: #059669;
+}
+
+.premium-change.negative {
+  color: #dc2626;
+}
+
+.bid-ask-display {
+  margin-top: 0.5rem;
+  padding: 0.375rem 0.5rem;
+  background: #f3f4f6;
+  border-radius: 0.25rem;
+  font-size: 0.8125rem;
+  color: #6b7280;
+  text-align: center;
+}
+
+.spread-loading {
+  margin-top: 0.5rem;
+  color: #9ca3af;
+  font-size: 0.875rem;
+  font-style: italic;
+}
+
+.spread-display,
+.target-display {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 0.5rem;
+  padding: 0.5rem;
+  background: #f9fafb;
+  border-radius: 0.375rem;
+}
+
+.spread-label,
+.target-label {
+  font-size: 0.875rem;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.spread-value {
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.spread-value.positive {
+  color: #059669; /* Green */
+}
+
+.spread-value.negative {
+  color: #dc2626; /* Red */
+}
+
+.target-value {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #374151;
+}
+
+.signal-badge {
+  margin-top: 0.75rem;
+  padding: 0.5rem;
+  border-radius: 0.375rem;
+  text-align: center;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.signal-badge.signal-active {
+  background: #d1fae5;
+  color: #065f46;
+  border: 1px solid #86efac;
+}
+
+.signal-badge.signal-inactive {
+  background: #f9fafb;
+  color: #6b7280;
+  border: 1px solid #e5e7eb;
+}
+
 /* Mobile Responsive */
 @media (max-width: 640px) {
   .dashboard-header {
@@ -271,5 +481,15 @@
   .fab {
     bottom: 80px;
     right: 1rem;
+  }
+
+  .price-status-bar {
+    padding: 0.625rem 0.75rem;
+    font-size: 0.8125rem;
+  }
+
+  .refresh-button {
+    padding: 0.375rem 0.75rem;
+    font-size: 0.8125rem;
   }
 }

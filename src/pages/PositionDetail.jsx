@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { formatLocalDate, parseLocalDate, timestampToUTCDateString } from '../lib/dateUtils';
 import { fetchOptions } from '../lib/yahooFinance';
+import { updateCacheTickers } from '../lib/priceCache';
 import RelativePerformanceChart from '../components/RelativePerformanceChart';
 import PremiumDecayChart from '../components/PremiumDecayChart';
 import ConfirmDialog from '../components/ConfirmDialog';
@@ -80,6 +81,21 @@ export default function PositionDetail({ user }) {
         stockPrice: data.quote?.regularMarketPrice,
         option: matchingCall
       });
+
+      // Update cache with fresh option data
+      if (matchingCall && data.quote?.regularMarketPrice) {
+        const optionKey = `${position.ticker}_${position.strike}_${position.expiration}`;
+        updateCacheTickers({
+          [optionKey]: {
+            bid: matchingCall.bid || 0,
+            ask: matchingCall.ask || 0,
+            mid: ((matchingCall.bid || 0) + (matchingCall.ask || 0)) / 2,
+            lastPrice: matchingCall.lastPrice || 0,
+            stockPrice: data.quote.regularMarketPrice
+          }
+        });
+        console.log('[PositionDetail] Updated cache with fresh option data:', optionKey);
+      }
     } catch (error) {
       console.error('Failed to fetch option data:', error);
     } finally {
@@ -167,6 +183,18 @@ export default function PositionDetail({ user }) {
   // Callback for stock rotation chart
   const handlePricesLoaded = (stockPrice, benchPrice) => {
     setCurrentPrices({ stockPrice, benchPrice });
+
+    // Update cache with fresh prices from chart data
+    if (position && stockPrice && benchPrice) {
+      updateCacheTickers({
+        [position.ticker]: { price: stockPrice },
+        [position.benchmark]: { price: benchPrice }
+      });
+      console.log('[PositionDetail] Updated cache with fresh prices:', {
+        [position.ticker]: stockPrice,
+        [position.benchmark]: benchPrice
+      });
+    }
   };
 
   // Stock rotation calculations
@@ -226,7 +254,7 @@ export default function PositionDetail({ user }) {
                 spread={currentSpread}
                 threshold={targetSpread}
                 thresholdLabel={`Exit at ${targetSpread.toFixed(1)}% outperformance`}
-                signalLabel="✓ TARGET HIT"
+                signalLabel="✓ SWAP SIGNAL"
                 compareGreaterThan={true}
                 loading={!currentPrices}
               />

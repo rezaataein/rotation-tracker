@@ -2,6 +2,36 @@
 
 All notable changes to Rotation Tracker will be documented in this file.
 
+## [0.8.0] - 2026-04-16
+
+### Added
+- **Real-Time Dashboard Price Displays** - Dashboard and Scanner now show live market data
+  - Current prices for stock rotation positions (stock vs benchmark)
+  - Current spread calculations with exit/entry thresholds
+  - Option premium data for covered calls with bid/ask spreads
+  - Signal badges indicating when positions meet action criteria (SWAP/ENTRY/BUYBACK signals)
+  - Global timestamp bar with freshness indicator (green <2min, yellow 2-5min, red >5min)
+  - Manual refresh button to force update all data
+
+- **Intelligent Price Caching** - sessionStorage-based caching for optimal performance
+  - 5-minute TTL per ticker with individual timestamps
+  - Automatic cache invalidation for stale data
+  - Cache persists across page navigation (not F5)
+  - Detail pages update cache when fetching chart data
+  - Separate timestamp tracking for Positions and Scanner pages
+
+### Changed
+- **Signal Terminology** - Consistent naming across app
+  - Strategy/Scanner cards: "🎯 ENTRY SIGNAL" (when to enter position)
+  - Position cards (stock rotation): "✓ SWAP SIGNAL" (when to rotate back)
+  - Position cards (covered calls): "🟢 BUYBACK NOW!" (early close opportunity)
+
+### Technical
+- Created `src/lib/priceCache.js` - centralized cache utilities
+- Enhanced edge function calls with batch fetching for efficiency
+- Historical price caching for scanner lookback calculations
+- Per-page cache key tracking to prevent cross-page timestamp pollution
+
 ## [0.7.0] - 2026-04-16
 
 ### Added

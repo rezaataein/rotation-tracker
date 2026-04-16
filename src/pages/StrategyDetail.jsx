@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
+import { updateCacheTickers } from '../lib/priceCache';
 import ConfirmDialog from '../components/ConfirmDialog';
 import EditStrategy from '../components/EditStrategy';
 import StrategyComparisonChart from '../components/StrategyComparisonChart';
@@ -86,6 +87,18 @@ export default function StrategyDetail({ user }) {
 
   const handleChartDataLoaded = (data) => {
     setChartData(data);
+
+    // Update cache with fresh prices from chart data
+    if (strategy && data?.stockPrice && data?.benchPrice) {
+      updateCacheTickers({
+        [strategy.ticker]: { price: data.stockPrice },
+        [strategy.benchmark]: { price: data.benchPrice }
+      });
+      console.log('[StrategyDetail] Updated cache with fresh prices:', {
+        [strategy.ticker]: data.stockPrice,
+        [strategy.benchmark]: data.benchPrice
+      });
+    }
   };
 
   // Check if current spread meets entry threshold
@@ -166,7 +179,7 @@ export default function StrategyDetail({ user }) {
             spread={chartData?.spread}
             threshold={strategy.entry_threshold * 100}
             thresholdLabel={`Entry at ${(Math.abs(strategy.entry_threshold) * 100).toFixed(1)}% underperformance`}
-            signalLabel="🎯 BUY SIGNAL"
+            signalLabel="🎯 ENTRY SIGNAL"
             compareGreaterThan={false}
             loading={!chartData}
           />
