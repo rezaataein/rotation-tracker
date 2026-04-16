@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- White Background -->
+  <rect fill="#ffffff" width="512" height="512" rx="80"/>
+
+  <!-- Top semicircle (GREEN - rotated counter-clockwise) -->
+  <g transform="rotate(-42 256 256)" fill="none" stroke="#16a34a" stroke-width="28" stroke-linecap="round">
+    <path d="M 136 220 A 120 120 0 0 1 376 220"/>
+    <!-- Arrow head: base at circle end, point extends in direction of motion -->
+    <polygon fill="#16a34a" points="365,220 387,220 376,235"/>
+  </g>
+
+  <!-- Bottom semicircle (RED - rotated counter-clockwise) -->
+  <g transform="rotate(-42 256 256)" fill="none" stroke="#dc2626" stroke-width="28" stroke-linecap="round">
+    <path d="M 376 305 A 120 120 0 0 1 136 305"/>
+    <!-- Arrow head: base at circle end, point extends in direction of motion -->
+    <polygon fill="#dc2626" points="125,305 147,305 136,290"/>
+  </g>
+
+  <!-- Upward trending chart line (BLUE - rotated counter-clockwise to fit gap) -->
+  <g transform="rotate(-5 256 256)">
+    <path stroke="#2563eb" stroke-width="12" fill="none" stroke-linecap="round"
+          d="M 80 350 L 120 320 L 160 330 L 200 280 L 240 300 L 280 240 L 320 260 L 360 200 L 400 160"/>
+  </g>
+</svg>

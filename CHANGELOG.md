@@ -2,6 +2,27 @@
 
 All notable changes to Rotation Tracker will be documented in this file.
 
+## [0.6.2] - 2026-04-15
+
+### Changed
+- **App Icon & Branding** - Custom rotation-themed icon design
+  - New icon: Red/green rotation arrows with blue upward trending chart
+  - White background with vivid accent colors (matches ticker comparison style)
+  - Red arrow (top): counter-clockwise rotation
+  - Green arrow (bottom): clockwise rotation  
+  - Blue chart line: upward trend matching ticker comparison line style
+  - SVG format (scales perfectly, no PNG conversion needed)
+  - Favicon and apple-touch-icon use SVG directly
+  - Icon displayed in Settings About section for branding
+  - Icon appears on: Login page, PWA home screen, browser tabs, push notifications
+  
+### Technical
+- Created `public/icons/icon.svg` - source design file
+- Updated `vite.config.js` - theme color #2563eb (blue), SVG as primary icon with `sizes: "any"`
+- Updated `index.html` - favicon, apple-touch-icon use SVG, theme color #2563eb
+- Icon colors: Red #dc2626, Green #16a34a, Blue #2563eb on white #ffffff
+- Follows ticker comparison design pattern (simple, clean, vivid colors)
+
 ## [0.6.1] - 2026-04-15
 
 ### Fixed

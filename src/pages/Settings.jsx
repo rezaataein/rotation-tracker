@@ -194,9 +194,12 @@ export default function Settings({ user }) {
         {/* About Section */}
         <section className="settings-section">
           <h2>About</h2>
+          <div style={{ textAlign: 'center', margin: '1.5rem 0' }}>
+            <img src="/rotation-tracker/icons/icon.svg" alt="Rotation Tracker" style={{ width: '96px', height: '96px', borderRadius: '20px' }} />
+          </div>
           <div className="setting-item">
             <div className="setting-label">Version</div>
-            <div className="setting-value">0.6.1</div>
+            <div className="setting-value">0.6.2</div>
           </div>
           <div className="setting-item">
             <div className="setting-label">Build Date</div>
