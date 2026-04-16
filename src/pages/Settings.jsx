@@ -199,7 +199,7 @@ export default function Settings({ user }) {
           </div>
           <div className="setting-item">
             <div className="setting-label">Version</div>
-            <div className="setting-value">0.6.2</div>
+            <div className="setting-value">0.6.3</div>
           </div>
           <div className="setting-item">
             <div className="setting-label">Build Date</div>

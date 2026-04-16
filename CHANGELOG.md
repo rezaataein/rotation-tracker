@@ -2,6 +2,20 @@
 
 All notable changes to Rotation Tracker will be documented in this file.
 
+## [0.6.3] - 2026-04-15
+
+### Fixed
+- **PWA Icon Not Updating** - Converted custom SVG icon to PNG format
+  - iOS and Android PWAs prefer PNG over SVG for home screen icons
+  - Old placeholder PNG files (from April 12) were still being used
+  - Converted icon.svg to icon-192.png (192x192) and icon-512.png (512x512)
+  - Users must uninstall and reinstall PWA to see new icon
+  
+### Technical
+- Used rsvg-convert to generate PNGs from SVG source
+- Maintained both SVG (for web) and PNG (for PWA) formats
+- Icon files now dated April 15 (current custom design)
+
 ## [0.6.2] - 2026-04-15
 
 ### Changed
