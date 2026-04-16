@@ -2,6 +2,15 @@
 
 All notable changes to Rotation Tracker will be documented in this file.
 
+## [0.6.1] - 2026-04-15
+
+### Fixed
+- **Position "How it works" Guide Notes** - Now reflect active/paused status
+  - Stock rotation: Shows pause message when paused, monitoring message when active
+  - Covered call: Shows pause message when paused, monitoring message when active
+  - Background color changes: Green when active, gray when paused
+  - Matches strategy detail page pattern exactly
+
 ## [0.6.0] - 2026-04-15
 
 ### Added

@@ -254,10 +254,18 @@ export default function PositionDetail({ user }) {
               </div>
             </div>
 
-            <div className="info-note" style={{ backgroundColor: '#e8f5e9', marginTop: '1.5rem' }}>
+            <div className="info-note" style={{ backgroundColor: position.active ? '#e8f5e9' : '#f3f4f6', marginTop: '1.5rem' }}>
               <strong>How it works:</strong><br />
-              ⏰ Automated checks run 3 times daily during market hours (9:30am, 12:30pm, 3:30pm ET).
-              You'll receive a SWAP alert when this position outperforms {position.benchmark} by {targetSpread.toFixed(1)}% (time to rotate back to benchmark).
+              {position.active ? (
+                <>
+                  ⏰ Automated checks run 3 times daily during market hours (9:30am, 12:30pm, 3:30pm ET).
+                  You'll receive a SWAP alert when this position outperforms {position.benchmark} by {targetSpread.toFixed(1)}% (time to rotate back to benchmark).
+                </>
+              ) : (
+                <>
+                  ⏸️ Position paused - No automated checks running. Click Activate to resume monitoring for swap signals.
+                </>
+              )}
             </div>
           </>
         ) : (
@@ -314,10 +322,18 @@ export default function PositionDetail({ user }) {
               </div>
             </div>
 
-            <div className="info-note" style={{ backgroundColor: '#e8f5e9', marginTop: '1.5rem' }}>
+            <div className="info-note" style={{ backgroundColor: position.active ? '#e8f5e9' : '#f3f4f6', marginTop: '1.5rem' }}>
               <strong>How it works:</strong><br />
-              ⏰ Automated checks run 3 times daily during market hours (9:30am, 12:30pm, 3:30pm ET).
-              You'll receive a BUYBACK alert when the option premium drops to ${position.alert_target.toFixed(2)} or below (early close opportunity).
+              {position.active ? (
+                <>
+                  ⏰ Automated checks run 3 times daily during market hours (9:30am, 12:30pm, 3:30pm ET).
+                  You'll receive a BUYBACK alert when the option premium drops to ${position.alert_target.toFixed(2)} or below (early close opportunity).
+                </>
+              ) : (
+                <>
+                  ⏸️ Position paused - No automated checks running. Click Activate to resume monitoring for buyback alerts.
+                </>
+              )}
             </div>
           </>
         )}
