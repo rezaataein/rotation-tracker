@@ -248,6 +248,9 @@ export default function RelativePerformanceChart({ position, onPricesLoaded }) {
         </div>
       )}
       <div ref={chartContainerRef} className="chart-container" />
+      <div className="chart-disclaimer">
+        ℹ️ Chart starts at first available market data on entry date and may not begin at 0%. Spread calculated using your entry prices.
+      </div>
     </div>
   );
 }

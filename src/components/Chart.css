@@ -56,8 +56,10 @@
 }
 
 .chart-disclaimer {
-  margin-top: 8px;
-  font-size: 12px;
-  color: var(--text-secondary);
-  text-align: center;
+  font-size: 0.6875rem; /* 11px - subtle but readable */
+  color: #6b7280; /* gray-500 - secondary info color */
+  margin-top: 0.75rem; /* Space from chart */
+  line-height: 1.5; /* Readability */
+  text-align: left; /* Align with chart */
+  padding: 0 0.25rem; /* Slight padding for alignment */
 }

@@ -2,6 +2,15 @@
 
 All notable changes to Rotation Tracker will be documented in this file.
 
+## [0.10.2] - 2026-04-16
+
+### Added
+- **Chart Disclaimer for Stock Rotation Positions** - Added informational note below relative performance charts
+  - Explains why chart may not start at 0% (first market data point timing)
+  - Clarifies that spread calculations use user's entered entry prices
+  - Helps users understand baseline methodology
+  - Follows industry standard styling (subtle gray text with ℹ️ icon)
+
 ## [0.10.1] - 2026-04-16
 
 ### Fixed
