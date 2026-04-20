@@ -27,6 +27,9 @@ export default function EditPosition({ user, position, onClose, onSave }) {
   const [entryPremium, setEntryPremium] = useState(position.entry_premium?.toString() || '');
   const [alertTarget, setAlertTarget] = useState(position.alert_target?.toString() || '');
 
+  // Common fields
+  const [notes, setNotes] = useState(position.notes || '');
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -36,6 +39,7 @@ export default function EditPosition({ user, position, onClose, onSave }) {
       // Build update data based on position type
       const baseData = {
         entry_date: entryDate,
+        notes: notes.trim() || null, // Store null if empty
       };
 
       const updateData = type === 'stock_rotation'
@@ -268,6 +272,24 @@ export default function EditPosition({ user, position, onClose, onSave }) {
               </div>
             </>
           )}
+
+          {/* Notes field (common to all types) */}
+          <div className="form-group">
+            <label htmlFor="notes">Notes (Optional)</label>
+            <textarea
+              id="notes"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="e.g., Fidelity IRA, Main Account..."
+              maxLength={100}
+              rows={2}
+              disabled={loading}
+              style={{ resize: 'vertical', minHeight: '60px' }}
+            />
+            <div className="char-count" style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: '0.25rem' }}>
+              {notes.length}/100 characters
+            </div>
+          </div>
 
           <div className="form-actions">
             <button type="button" onClick={onClose} className="btn-secondary" disabled={loading}>

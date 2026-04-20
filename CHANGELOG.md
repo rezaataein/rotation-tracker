@@ -2,6 +2,40 @@
 
 All notable changes to Rotation Tracker will be documented in this file.
 
+## [0.11.0] - 2026-04-20
+
+### Added
+- **Notes Field** - Added optional notes field (100 char max) to positions and strategies
+  - Displayed on dashboard/scanner cards
+  - Editable via Edit modal
+  - Smart truncation based on screen size
+  - Use for account names, trade notes, etc.
+
+- **Drag-and-Drop Sorting** - Manual card reordering on Dashboard (PARTIAL - Scanner TODO)
+  - Drag handle (⋮⋮) on each position card
+  - Reorder by dragging cards
+  - Sort order persisted to database
+  - Falls back to urgency-based sorting for cards without manual order
+
+- **Urgency-Based Auto-Sorting** - Intelligent default sorting
+  - Stock rotations: Higher spread = more urgent (closer to exit)
+  - Covered calls: Lower premium = more urgent (better buyback opportunity)
+  - Strategies: More negative spread = more urgent (entry signal)
+  - Manual sort_order takes precedence when set
+
+### Changed
+- Dashboard positions now sorted by urgency (most actionable first)
+- Added @dnd-kit libraries for drag-and-drop functionality
+
+### Database
+- Migration file: `supabase/migrations/20260420_add_notes_and_sort_order.sql`
+- Added `notes` column (TEXT, 100 char limit) to positions and strategies
+- Added `sort_order` column (INTEGER, nullable) to positions and strategies
+
+### Notes
+- Scanner drag-and-drop implementation incomplete (Dashboard only)
+- Run migration SQL manually in Supabase dashboard
+
 ## [0.10.2] - 2026-04-16
 
 ### Added

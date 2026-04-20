@@ -4,6 +4,23 @@ import { supabase } from '../lib/supabase';
 import { fetchOptions } from '../lib/yahooFinance';
 import { getCacheTicker, updateCacheTicker, updateCacheTickers, getOldestCacheTimestamp, getOldestCacheTimestampForTickers, getFreshnessClass, formatCacheTime } from '../lib/priceCache';
 import { getCurrentPrice } from '../lib/priceUtils';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragOverlay
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+  useSortable
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import './Dashboard.css';
 
 export default function Dashboard({ user, refreshKey }) {
@@ -16,6 +33,15 @@ export default function Dashboard({ user, refreshKey }) {
   const [optionData, setOptionData] = useState({}); // { ticker_strike_expiration: { bid, ask, mid, stockPrice } }
   const [pricesLoading, setPricesLoading] = useState(false);
   const [lastUpdated, setLastUpdated] = useState(null);
+  const [sortedPositions, setSortedPositions] = useState([]);
+
+  // Drag and drop sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
   useEffect(() => {
     fetchPositions();
@@ -305,6 +331,60 @@ export default function Dashboard({ user, refreshKey }) {
     return currentPremium <= position.alert_target;
   };
 
+  // Calculate urgency score for sorting (lower = more urgent)
+  const calculateUrgency = (position) => {
+    if (position.type === 'stock_rotation') {
+      const spread = calculateSpread(position);
+      if (spread === null) return Infinity; // No data = least urgent
+      // Higher spread = more urgent (descending), so negate it
+      return -spread;
+    } else {
+      // Covered call: lower premium = more urgent (ascending)
+      const option = getOptionInfo(position);
+      const currentPremium = option ? (option.mid || option.lastPrice) : null;
+      if (currentPremium === null) return Infinity; // No data = least urgent
+      return currentPremium;
+    }
+  };
+
+  // Handle drag end - update sort_order in database
+  const handleDragEnd = async (event) => {
+    const { active, over } = event;
+
+    if (!over || active.id === over.id) {
+      return;
+    }
+
+    const oldIndex = sortedPositions.findIndex(p => p.id === active.id);
+    const newIndex = sortedPositions.findIndex(p => p.id === over.id);
+
+    // Reorder locally
+    const reordered = arrayMove(sortedPositions, oldIndex, newIndex);
+
+    // Update sort_order for all affected positions (assign sequential numbers)
+    const updates = reordered.map((pos, index) => ({
+      id: pos.id,
+      sort_order: index
+    }));
+
+    // Optimistically update UI
+    setSortedPositions(reordered);
+
+    // Update database
+    try {
+      for (const update of updates) {
+        await supabase
+          .from('positions')
+          .update({ sort_order: update.sort_order })
+          .eq('id', update.id);
+      }
+    } catch (error) {
+      console.error('Error updating sort order:', error);
+      // Revert on error
+      fetchPositions();
+    }
+  };
+
   const filteredPositions = positions.filter(position => {
     // Type filter
     const typeMatch = typeFilter === 'all' || position.type === typeFilter;
@@ -316,6 +396,24 @@ export default function Dashboard({ user, refreshKey }) {
 
     return typeMatch && statusMatch;
   });
+
+  // Sort filtered positions by manual order first, then by urgency
+  useEffect(() => {
+    const sorted = [...filteredPositions].sort((a, b) => {
+      // 1. Manual sort_order takes precedence (if both have values)
+      if (a.sort_order !== null && b.sort_order !== null) {
+        return a.sort_order - b.sort_order;
+      }
+      if (a.sort_order !== null) return -1; // a goes first
+      if (b.sort_order !== null) return 1;  // b goes first
+
+      // 2. Sort by urgency (lower urgency value = more urgent)
+      const urgencyA = calculateUrgency(a);
+      const urgencyB = calculateUrgency(b);
+      return urgencyA - urgencyB;
+    });
+    setSortedPositions(sorted);
+  }, [filteredPositions, priceData, optionData]);
 
   if (loading) {
     return (
@@ -403,8 +501,17 @@ export default function Dashboard({ user, refreshKey }) {
             </button>
           </div>
 
-          <div className="position-list">
-            {filteredPositions.map(position => {
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
+          >
+            <SortableContext
+              items={sortedPositions.map(p => p.id)}
+              strategy={verticalListSortingStrategy}
+            >
+              <div className="position-list">
+                {sortedPositions.map(position => {
               // Stock rotation data
               const spread = position.type === 'stock_rotation' ? calculateSpread(position) : null;
               const exitSignal = position.type === 'stock_rotation' ? isExitSignal(position) : false;
@@ -416,18 +523,49 @@ export default function Dashboard({ user, refreshKey }) {
               const buybackSignal = position.type === 'covered_call' ? isBuybackSignal(position) : false;
               const currentPremium = option ? (option.mid || option.lastPrice) : null;
 
-              return (
-                <div
-                  key={position.id}
-                  className={`position-card ${!position.active ? 'inactive' : ''}`}
-                  onClick={() => navigate(`/position/${position.id}`)}
-                >
-                  <div className="position-header">
-                    <h3>{position.ticker}</h3>
-                    <span className="position-type">
-                      {position.type === 'stock_rotation' ? 'Stock Rotation' : 'Covered Call'}
-                    </span>
-                  </div>
+              // Sortable card wrapper
+              const SortableCard = () => {
+                const {
+                  attributes,
+                  listeners,
+                  setNodeRef,
+                  transform,
+                  transition,
+                  isDragging
+                } = useSortable({ id: position.id });
+
+                const style = {
+                  transform: CSS.Transform.toString(transform),
+                  transition,
+                  opacity: isDragging ? 0.5 : 1,
+                };
+
+                return (
+                  <div
+                    ref={setNodeRef}
+                    style={style}
+                    className={`position-card ${!position.active ? 'inactive' : ''}`}
+                    onClick={() => navigate(`/position/${position.id}`)}
+                  >
+                    <div className="position-header">
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <button
+                          className="drag-handle"
+                          {...attributes}
+                          {...listeners}
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          ⋮⋮
+                        </button>
+                        <h3>{position.ticker}</h3>
+                      </div>
+                      <span className="position-type">
+                        {position.type === 'stock_rotation' ? 'Stock Rotation' : 'Covered Call'}
+                      </span>
+                    </div>
+                    {position.notes && (
+                      <div className="position-notes">{position.notes}</div>
+                    )}
                   <div className="position-body">
                     {/* STOCK ROTATION */}
                     {position.type === 'stock_rotation' && (
@@ -526,8 +664,13 @@ export default function Dashboard({ user, refreshKey }) {
                   </div>
                 </div>
               );
-            })}
-          </div>
+            };
+
+            return <SortableCard key={position.id} />;
+          })}
+              </div>
+            </SortableContext>
+          </DndContext>
         </>
       )}
     </div>

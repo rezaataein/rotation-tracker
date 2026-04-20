@@ -17,6 +17,7 @@ export default function EditStrategy({ user, strategy, onClose, onSave }) {
   const [entryThreshold, setEntryThreshold] = useState(
     Math.abs(strategy.entry_threshold * 100).toString()
   );
+  const [notes, setNotes] = useState(strategy.notes || '');
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -49,6 +50,7 @@ export default function EditStrategy({ user, strategy, onClose, onSave }) {
         name: strategyName,
         lookback_days: lookback,
         entry_threshold: -threshold / 100,
+        notes: notes.trim() || null, // Store null if empty
       };
 
       const { data, error } = await supabase
@@ -167,6 +169,24 @@ export default function EditStrategy({ user, strategy, onClose, onSave }) {
             )}
             <div className="field-hint">
               Get BUY signal when {ticker} underperforms {benchmark} by this %
+            </div>
+          </div>
+
+          {/* Notes field */}
+          <div className="form-group">
+            <label htmlFor="notes">Notes (Optional)</label>
+            <textarea
+              id="notes"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="e.g., Fidelity IRA, Main Account..."
+              maxLength={100}
+              rows={2}
+              disabled={loading}
+              style={{ resize: 'vertical', minHeight: '60px' }}
+            />
+            <div className="char-count" style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: '0.25rem' }}>
+              {notes.length}/100 characters
             </div>
           </div>
 
