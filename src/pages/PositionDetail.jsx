@@ -282,6 +282,12 @@ export default function PositionDetail({ user }) {
                   <span className="label">{position.benchmark} Entry</span>
                   <span className="value">${position.entry_bench_price.toFixed(2)}</span>
                 </div>
+                {position.notes && (
+                  <div className="config-item" style={{ gridColumn: '1 / -1' }}>
+                    <span className="label">Notes</span>
+                    <span className="value">{position.notes}</span>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -350,6 +356,12 @@ export default function PositionDetail({ user }) {
                   <span className="label">Entry Premium</span>
                   <span className="value">${position.entry_premium.toFixed(2)}</span>
                 </div>
+                {position.notes && (
+                  <div className="config-item" style={{ gridColumn: '1 / -1' }}>
+                    <span className="label">Notes</span>
+                    <span className="value">{position.notes}</span>
+                  </div>
+                )}
               </div>
             </div>
 

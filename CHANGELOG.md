@@ -2,6 +2,19 @@
 
 All notable changes to Rotation Tracker will be documented in this file.
 
+## [0.11.1] - 2026-04-20
+
+### Fixed
+- **Drag Handle Navigation Bug** - Fixed drag handle triggering detail page navigation
+  - Restructured card layout to separate drag handle from clickable content
+  - Drag handle now properly isolated with flex layout
+  - Content area clickable, drag handle allows dragging without navigation
+  
+- **Missing Notes on Detail Pages** - Added notes display to detail views
+  - PositionDetail now shows notes in config section (both types)
+  - StrategyDetail now shows notes in config section
+  - Notes displayed as full-width config item when present
+
 ## [0.11.0] - 2026-04-20
 
 ### Added

@@ -545,28 +545,28 @@ export default function Dashboard({ user, refreshKey }) {
                     ref={setNodeRef}
                     style={style}
                     className={`position-card ${!position.active ? 'inactive' : ''}`}
-                    onClick={() => navigate(`/position/${position.id}`)}
                   >
-                    <div className="position-header">
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        <button
-                          className="drag-handle"
-                          {...attributes}
-                          {...listeners}
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          ⋮⋮
-                        </button>
-                        <h3>{position.ticker}</h3>
-                      </div>
-                      <span className="position-type">
-                        {position.type === 'stock_rotation' ? 'Stock Rotation' : 'Covered Call'}
-                      </span>
-                    </div>
-                    {position.notes && (
-                      <div className="position-notes">{position.notes}</div>
-                    )}
-                  <div className="position-body">
+                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem' }}>
+                      <button
+                        className="drag-handle"
+                        {...attributes}
+                        {...listeners}
+                      >
+                        ⋮⋮
+                      </button>
+                      <div style={{ flex: 1 }} onClick={() => navigate(`/position/${position.id}`)}>
+                        <div className="position-header">
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <h3>{position.ticker}</h3>
+                          </div>
+                          <span className="position-type">
+                            {position.type === 'stock_rotation' ? 'Stock Rotation' : 'Covered Call'}
+                          </span>
+                        </div>
+                        {position.notes && (
+                          <div className="position-notes">{position.notes}</div>
+                        )}
+                        <div className="position-body">
                     {/* STOCK ROTATION */}
                     {position.type === 'stock_rotation' && (
                       <>
@@ -661,10 +661,12 @@ export default function Dashboard({ user, refreshKey }) {
                         )}
                       </>
                     )}
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              );
-            };
+                );
+              };
 
             return <SortableCard key={position.id} />;
           })}

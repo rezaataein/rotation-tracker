@@ -204,6 +204,12 @@ export default function StrategyDetail({ user }) {
               <span className="label">Entry Threshold</span>
               <span className="value">{(Math.abs(strategy.entry_threshold) * 100).toFixed(1)}% underperformance</span>
             </div>
+            {strategy.notes && (
+              <div className="config-item" style={{ gridColumn: '1 / -1' }}>
+                <span className="label">Notes</span>
+                <span className="value">{strategy.notes}</span>
+              </div>
+            )}
           </div>
         </div>
 
