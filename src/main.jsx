@@ -8,7 +8,7 @@ if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/rotation-tracker/sw.js')
       .then((registration) => {
-        console.log('[SW] Service worker registered:', registration);
+        // Service worker registered successfully
       })
       .catch((error) => {
         console.error('[SW] Service worker registration failed:', error);

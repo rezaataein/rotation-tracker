@@ -37,13 +37,6 @@ export default function StrategyComparisonChart({ strategy, onDataLoaded }) {
       startDate.setDate(startDate.getDate() - strategy.lookback_days);
       const startDateString = startDate.toISOString().split('T')[0];
 
-      console.log('[StrategyChart] Fetching data:');
-      console.log('  Strategy:', strategy.ticker, 'vs', strategy.benchmark);
-      console.log('  Lookback days:', strategy.lookback_days);
-      console.log('  Start date:', startDateString);
-      console.log('  End date:', today);
-      console.log('  Expected days:', strategy.lookback_days);
-
       // Fetch both stock and benchmark data
       const results = await fetchMultipleHistoricalPrices(
         [strategy.ticker, strategy.benchmark],
@@ -51,25 +44,11 @@ export default function StrategyComparisonChart({ strategy, onDataLoaded }) {
         today
       );
 
-      console.log('[StrategyChart] Data received:', results.length, 'tickers');
-
       const stockData = results.find(r => r.symbol === strategy.ticker);
       const benchData = results.find(r => r.symbol === strategy.benchmark);
 
       if (!stockData || !benchData) {
         throw new Error('Failed to fetch price data');
-      }
-
-      console.log('[StrategyChart] Stock data points:', stockData.timestamps?.length || 0);
-      console.log('[StrategyChart] Benchmark data points:', benchData.timestamps?.length || 0);
-
-      if (stockData.timestamps && stockData.timestamps.length > 0) {
-        const firstDate = new Date(stockData.timestamps[0] * 1000).toISOString().split('T')[0];
-        const lastDate = new Date(stockData.timestamps[stockData.timestamps.length - 1] * 1000).toISOString().split('T')[0];
-        console.log('[StrategyChart] Date range received:', firstDate, 'to', lastDate);
-
-        const actualDays = (stockData.timestamps[stockData.timestamps.length - 1] - stockData.timestamps[0]) / 86400;
-        console.log('[StrategyChart] Actual days of data:', Math.floor(actualDays));
       }
 
       // Get current prices (includes extended hours)
@@ -127,8 +106,6 @@ export default function StrategyComparisonChart({ strategy, onDataLoaded }) {
       stockBaseline,
       benchBaseline
     );
-
-    console.log('[StrategyChart] Spread data points:', spreadData.length);
 
     // Create new chart
     const chart = LightweightCharts.createChart(chartContainerRef.current, {

@@ -76,8 +76,6 @@ export default function PositionDetail({ user }) {
       // Find the exact strike we're looking for (should be in the filtered results)
       const matchingCall = calls.find(call => call.strike === position.strike);
 
-      console.log('Matching call:', matchingCall ? `Strike ${matchingCall.strike}, Bid ${matchingCall.bid}, Ask ${matchingCall.ask}` : 'Not found');
-
       const stockPrice = getCurrentPrice(data.quote);
 
       setOptionData({
@@ -97,7 +95,6 @@ export default function PositionDetail({ user }) {
             stockPrice: stockPrice
           }
         });
-        console.log('[PositionDetail] Updated cache with fresh option data:', optionKey);
       }
     } catch (error) {
       console.error('Failed to fetch option data:', error);
@@ -192,10 +189,6 @@ export default function PositionDetail({ user }) {
       updateCacheTickers({
         [position.ticker]: { price: stockPrice },
         [position.benchmark]: { price: benchPrice }
-      });
-      console.log('[PositionDetail] Updated cache with fresh prices:', {
-        [position.ticker]: stockPrice,
-        [position.benchmark]: benchPrice
       });
     }
   };

@@ -2,6 +2,45 @@
 
 All notable changes to Rotation Tracker will be documented in this file.
 
+## [1.0.0] - 2026-04-20 🎉 MVP Release
+
+### 🎯 Production Release
+**Rotation Tracker MVP is complete and ready for production use!**
+
+This release marks the first stable version with all core features implemented and tested.
+
+### Fixed
+- **Critical Bug: Duplicate sort_order in filtered views** 
+  - When dragging cards with filters active, hidden items kept old sort_order values
+  - Now clears sort_order for hidden items to prevent duplicates
+  - Manual ordering now works correctly across filter changes
+  - Fixed in both Dashboard (positions) and Scanner (strategies)
+
+### Changed
+- **Removed all debug console.logs** for production
+  - Cleaned up 20+ debug statements across codebase
+  - Kept console.error for proper error logging
+  - Cleaner browser console in production
+
+### Core Features (Complete)
+✅ **Multi-user position tracking** with secure data isolation
+✅ **Stock rotation strategy scanner** (any ticker vs any benchmark)
+✅ **Covered call options monitoring** with real-time premium tracking
+✅ **Automated signal monitoring** (3x daily checks during market hours)
+✅ **Web push notifications** for entry/exit/buyback signals
+✅ **Drag-and-drop card sorting** with urgency-based auto-sort
+✅ **Notes field** for account identification (100 char limit)
+✅ **Progressive Web App** (offline support, installable)
+✅ **Mobile-first responsive design**
+
+### Technical Stack
+- Frontend: React 19 + Vite + PWA
+- Backend: Supabase (PostgreSQL + Auth)
+- Cron: GitHub Actions (automated checks)
+- Market Data: Yahoo Finance API
+- Charts: TradingView Lightweight Charts
+- Hosting: GitHub Pages (free)
+
 ## [0.11.2] - 2026-04-20
 
 ### Added

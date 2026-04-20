@@ -94,10 +94,6 @@ export default function StrategyDetail({ user }) {
         [strategy.ticker]: { price: data.stockPrice },
         [strategy.benchmark]: { price: data.benchPrice }
       });
-      console.log('[StrategyDetail] Updated cache with fresh prices:', {
-        [strategy.ticker]: data.stockPrice,
-        [strategy.benchmark]: data.benchPrice
-      });
     }
   };
 

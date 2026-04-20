@@ -230,7 +230,6 @@ export default function Dashboard({ user, refreshKey }) {
 
                 return { key: optionKey, data: optionInfo };
               } else {
-                console.warn('[Dashboard] Contract not found for', optionKey);
                 return null;
               }
             } catch (error) {
@@ -360,27 +359,52 @@ export default function Dashboard({ user, refreshKey }) {
     // Reorder locally
     const reordered = arrayMove(sortedPositions, oldIndex, newIndex);
 
-    // Update sort_order for all affected positions (assign sequential numbers)
+    // Update sort_order for visible items (assign sequential numbers)
     const updates = reordered.map((pos, index) => ({
       id: pos.id,
       sort_order: index
     }));
 
+    // Get IDs of visible items
+    const visibleIds = new Set(reordered.map(p => p.id));
+
     // Optimistically update local positions state
     setPositions(prevPositions => {
       return prevPositions.map(pos => {
+        // If this position is in the visible/sorted list, update its sort_order
         const update = updates.find(u => u.id === pos.id);
-        return update ? { ...pos, sort_order: update.sort_order } : pos;
+        if (update) {
+          return { ...pos, sort_order: update.sort_order };
+        }
+        // If NOT in visible list, clear sort_order to prevent duplicates
+        // (hidden items will auto-sort by urgency when filters change)
+        if (!visibleIds.has(pos.id)) {
+          return { ...pos, sort_order: null };
+        }
+        // Otherwise keep as is
+        return pos;
       });
     });
 
     // Update database
     try {
+      // Update visible items with new sort_order
       for (const update of updates) {
         await supabase
           .from('positions')
           .update({ sort_order: update.sort_order })
           .eq('id', update.id);
+      }
+
+      // Clear sort_order for hidden items to prevent duplicates
+      const allIds = positions.map(p => p.id);
+      const hiddenIds = allIds.filter(id => !visibleIds.has(id));
+
+      if (hiddenIds.length > 0) {
+        await supabase
+          .from('positions')
+          .update({ sort_order: null })
+          .in('id', hiddenIds);
       }
     } catch (error) {
       console.error('Error updating sort order:', error);

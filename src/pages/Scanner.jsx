@@ -340,27 +340,52 @@ export default function Scanner({ user, refreshKey }) {
     // Reorder locally
     const reordered = arrayMove(sortedStrategies, oldIndex, newIndex);
 
-    // Update sort_order for all affected strategies (assign sequential numbers)
+    // Update sort_order for visible items (assign sequential numbers)
     const updates = reordered.map((strategy, index) => ({
       id: strategy.id,
       sort_order: index
     }));
 
+    // Get IDs of visible items
+    const visibleIds = new Set(reordered.map(s => s.id));
+
     // Optimistically update local strategies state
     setStrategies(prevStrategies => {
       return prevStrategies.map(strategy => {
+        // If this strategy is in the visible/sorted list, update its sort_order
         const update = updates.find(u => u.id === strategy.id);
-        return update ? { ...strategy, sort_order: update.sort_order } : strategy;
+        if (update) {
+          return { ...strategy, sort_order: update.sort_order };
+        }
+        // If NOT in visible list, clear sort_order to prevent duplicates
+        // (hidden items will auto-sort by urgency when filters change)
+        if (!visibleIds.has(strategy.id)) {
+          return { ...strategy, sort_order: null };
+        }
+        // Otherwise keep as is
+        return strategy;
       });
     });
 
     // Update database
     try {
+      // Update visible items with new sort_order
       for (const update of updates) {
         await supabase
           .from('strategies')
           .update({ sort_order: update.sort_order })
           .eq('id', update.id);
+      }
+
+      // Clear sort_order for hidden items to prevent duplicates
+      const allIds = strategies.map(s => s.id);
+      const hiddenIds = allIds.filter(id => !visibleIds.has(id));
+
+      if (hiddenIds.length > 0) {
+        await supabase
+          .from('strategies')
+          .update({ sort_order: null })
+          .in('id', hiddenIds);
       }
     } catch (error) {
       console.error('Error updating sort order:', error);

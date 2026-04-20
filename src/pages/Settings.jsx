@@ -89,7 +89,6 @@ export default function Settings({ user }) {
 
         // Step 4: Update state
         setNotificationsEnabled(true);
-        console.log('Push notifications enabled successfully');
 
       } else {
         // DISABLE notifications
@@ -108,7 +107,6 @@ export default function Settings({ user }) {
 
         // Step 4: Update state
         setNotificationsEnabled(false);
-        console.log('Push notifications disabled successfully');
       }
 
     } catch (error) {
