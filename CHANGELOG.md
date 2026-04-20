@@ -28,13 +28,13 @@ All notable changes to Rotation Tracker will be documented in this file.
 - Added @dnd-kit libraries for drag-and-drop functionality
 
 ### Database
-- Migration file: `supabase/migrations/20260420_add_notes_and_sort_order.sql`
+- Migration file: `migrations/003_add_notes_and_sort_order.sql`
 - Added `notes` column (TEXT, 100 char limit) to positions and strategies
 - Added `sort_order` column (INTEGER, nullable) to positions and strategies
 
 ### Notes
 - Scanner drag-and-drop implementation incomplete (Dashboard only)
-- Run migration SQL manually in Supabase dashboard
+- Run migration SQL manually in Supabase dashboard (`migrations/003_add_notes_and_sort_order.sql`)
 
 ## [0.10.2] - 2026-04-16
 

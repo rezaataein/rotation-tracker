@@ -91,7 +91,7 @@ The Scanner page (strategies) needs the same treatment as Dashboard:
 **IMPORTANT:** Run this SQL in Supabase dashboard:
 
 ```sql
--- See: supabase/migrations/20260420_add_notes_and_sort_order.sql
+-- See: migrations/003_add_notes_and_sort_order.sql
 
 ALTER TABLE positions
 ADD COLUMN IF NOT EXISTS notes TEXT CHECK (LENGTH(notes) <= 100),
