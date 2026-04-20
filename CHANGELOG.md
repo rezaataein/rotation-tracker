@@ -5,14 +5,20 @@ All notable changes to Rotation Tracker will be documented in this file.
 ## [0.11.1] - 2026-04-20
 
 ### Fixed
-- **Drag Handle Navigation Bug** - Fixed drag handle triggering detail page navigation
-  - Restructured card layout to separate drag handle from clickable content
-  - Drag handle now properly isolated with flex layout
-  - Content area clickable, drag handle allows dragging without navigation
-  
+- **Infinite Loop Bug** - Fixed useEffect causing maximum update depth error
+  - Changed from useEffect + setState to useMemo for sorting
+  - Prevents infinite re-render loop
+  - sortedPositions now computed efficiently without triggering renders
+
+- **Drag Handle Click Bug** - Fixed drag handle interfering with card navigation
+  - Restructured card: drag handle + clickable content wrapper side-by-side
+  - Drag handle isolated with dnd-kit listeners
+  - Content wrapper has onClick for navigation
+  - Proper separation prevents click/drag conflicts
+
 - **Missing Notes on Detail Pages** - Added notes display to detail views
-  - PositionDetail now shows notes in config section (both types)
-  - StrategyDetail now shows notes in config section
+  - PositionDetail shows notes in config section (stock rotation & covered call)
+  - StrategyDetail shows notes in config section
   - Notes displayed as full-width config item when present
 
 ## [0.11.0] - 2026-04-20

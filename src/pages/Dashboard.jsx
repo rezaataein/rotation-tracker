@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { fetchOptions } from '../lib/yahooFinance';
@@ -33,7 +33,6 @@ export default function Dashboard({ user, refreshKey }) {
   const [optionData, setOptionData] = useState({}); // { ticker_strike_expiration: { bid, ask, mid, stockPrice } }
   const [pricesLoading, setPricesLoading] = useState(false);
   const [lastUpdated, setLastUpdated] = useState(null);
-  const [sortedPositions, setSortedPositions] = useState([]);
 
   // Drag and drop sensors
   const sensors = useSensors(
@@ -367,8 +366,13 @@ export default function Dashboard({ user, refreshKey }) {
       sort_order: index
     }));
 
-    // Optimistically update UI
-    setSortedPositions(reordered);
+    // Optimistically update local positions state
+    setPositions(prevPositions => {
+      return prevPositions.map(pos => {
+        const update = updates.find(u => u.id === pos.id);
+        return update ? { ...pos, sort_order: update.sort_order } : pos;
+      });
+    });
 
     // Update database
     try {
@@ -398,8 +402,8 @@ export default function Dashboard({ user, refreshKey }) {
   });
 
   // Sort filtered positions by manual order first, then by urgency
-  useEffect(() => {
-    const sorted = [...filteredPositions].sort((a, b) => {
+  const sortedPositions = useMemo(() => {
+    return [...filteredPositions].sort((a, b) => {
       // 1. Manual sort_order takes precedence (if both have values)
       if (a.sort_order !== null && b.sort_order !== null) {
         return a.sort_order - b.sort_order;
@@ -412,7 +416,6 @@ export default function Dashboard({ user, refreshKey }) {
       const urgencyB = calculateUrgency(b);
       return urgencyA - urgencyB;
     });
-    setSortedPositions(sorted);
   }, [filteredPositions, priceData, optionData]);
 
   if (loading) {
@@ -546,7 +549,7 @@ export default function Dashboard({ user, refreshKey }) {
                     style={style}
                     className={`position-card ${!position.active ? 'inactive' : ''}`}
                   >
-                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem' }}>
+                    <div style={{ display: 'flex', gap: '0.5rem' }}>
                       <button
                         className="drag-handle"
                         {...attributes}
@@ -554,7 +557,10 @@ export default function Dashboard({ user, refreshKey }) {
                       >
                         ⋮⋮
                       </button>
-                      <div style={{ flex: 1 }} onClick={() => navigate(`/position/${position.id}`)}>
+                      <div
+                        style={{ flex: 1, cursor: 'pointer' }}
+                        onClick={() => navigate(`/position/${position.id}`)}
+                      >
                         <div className="position-header">
                           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                             <h3>{position.ticker}</h3>
