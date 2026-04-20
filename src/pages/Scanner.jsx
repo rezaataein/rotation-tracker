@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import {
@@ -10,6 +10,22 @@ import {
   formatCacheTime
 } from '../lib/priceCache';
 import { getCurrentPrice } from '../lib/priceUtils';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+  useSortable
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import './Scanner.css';
 import './Dashboard.css'; // Reuse Dashboard styles for price displays
 
@@ -22,6 +38,14 @@ export default function Scanner({ user, refreshKey }) {
   const [historicalData, setHistoricalData] = useState({}); // { 'ticker_lookback': historicalPrice }
   const [pricesLoading, setPricesLoading] = useState(false);
   const [lastUpdated, setLastUpdated] = useState(null);
+
+  // Drag and drop sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
   useEffect(() => {
     fetchStrategies();
@@ -293,6 +317,58 @@ export default function Scanner({ user, refreshKey }) {
     return spread <= entryThreshold;
   };
 
+  // Calculate urgency score for sorting (lower = more urgent)
+  const calculateUrgency = (strategy) => {
+    const spread = calculateSpread(strategy);
+    if (spread === null) return Infinity; // No data = least urgent
+    // More negative spread = more urgent (ascending), so return spread directly
+    // Example: -15% spread < -5% spread, so -15% is more urgent
+    return spread;
+  };
+
+  // Handle drag end - update sort_order in database
+  const handleDragEnd = async (event) => {
+    const { active, over } = event;
+
+    if (!over || active.id === over.id) {
+      return;
+    }
+
+    const oldIndex = sortedStrategies.findIndex(s => s.id === active.id);
+    const newIndex = sortedStrategies.findIndex(s => s.id === over.id);
+
+    // Reorder locally
+    const reordered = arrayMove(sortedStrategies, oldIndex, newIndex);
+
+    // Update sort_order for all affected strategies (assign sequential numbers)
+    const updates = reordered.map((strategy, index) => ({
+      id: strategy.id,
+      sort_order: index
+    }));
+
+    // Optimistically update local strategies state
+    setStrategies(prevStrategies => {
+      return prevStrategies.map(strategy => {
+        const update = updates.find(u => u.id === strategy.id);
+        return update ? { ...strategy, sort_order: update.sort_order } : strategy;
+      });
+    });
+
+    // Update database
+    try {
+      for (const update of updates) {
+        await supabase
+          .from('strategies')
+          .update({ sort_order: update.sort_order })
+          .eq('id', update.id);
+      }
+    } catch (error) {
+      console.error('Error updating sort order:', error);
+      // Revert on error
+      fetchStrategies();
+    }
+  };
+
   const filteredStrategies = strategies.filter(strategy => {
     // Status filter
     const statusMatch = statusFilter === 'all' ||
@@ -301,6 +377,23 @@ export default function Scanner({ user, refreshKey }) {
 
     return statusMatch;
   });
+
+  // Sort filtered strategies by manual order first, then by urgency
+  const sortedStrategies = useMemo(() => {
+    return [...filteredStrategies].sort((a, b) => {
+      // 1. Manual sort_order takes precedence (if both have values)
+      if (a.sort_order !== null && b.sort_order !== null) {
+        return a.sort_order - b.sort_order;
+      }
+      if (a.sort_order !== null) return -1; // a goes first
+      if (b.sort_order !== null) return 1;  // b goes first
+
+      // 2. Sort by urgency (lower urgency value = more urgent = more negative spread)
+      const urgencyA = calculateUrgency(a);
+      const urgencyB = calculateUrgency(b);
+      return urgencyA - urgencyB;
+    });
+  }, [filteredStrategies, priceData, historicalData]);
 
   if (loading) {
     return (
@@ -374,70 +467,117 @@ export default function Scanner({ user, refreshKey }) {
             </button>
           </div>
 
-          <div className="strategy-list">
-            {filteredStrategies.map(strategy => {
-              const spread = calculateSpread(strategy);
-              const entrySignal = isEntrySignal(strategy);
-              const entryThreshold = (Math.abs(strategy.entry_threshold) * 100).toFixed(1);
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
+          >
+            <SortableContext
+              items={sortedStrategies.map(s => s.id)}
+              strategy={verticalListSortingStrategy}
+            >
+              <div className="strategy-list">
+                {sortedStrategies.map(strategy => {
+                  const spread = calculateSpread(strategy);
+                  const entrySignal = isEntrySignal(strategy);
+                  const entryThreshold = (Math.abs(strategy.entry_threshold) * 100).toFixed(1);
 
-              return (
-                <div
-                  key={strategy.id}
-                  className={`strategy-card ${!strategy.active ? 'inactive' : ''}`}
-                  onClick={() => navigate(`/strategy/${strategy.id}`)}
-                >
-                  <div className="strategy-header">
-                    <h3>{strategy.name}</h3>
-                  </div>
+                  // Sortable card wrapper
+                  const SortableCard = () => {
+                    const {
+                      attributes,
+                      listeners,
+                      setNodeRef,
+                      transform,
+                      transition,
+                      isDragging
+                    } = useSortable({ id: strategy.id });
 
-                  <div className="strategy-body">
-                    {spread !== null ? (
-                      <>
-                        <p className="prices-label">
-                          ${priceData[strategy.ticker]?.toFixed(2) || '—'} vs {strategy.benchmark} ${priceData[strategy.benchmark]?.toFixed(2) || '—'}
-                        </p>
-                        <div className="spread-display">
-                          <span className="spread-label">Current Spread:</span>
-                          <span className={`spread-value ${spread <= 0 ? 'positive' : 'negative'}`}>
-                            {spread >= 0 ? '+' : ''}{spread.toFixed(2)}%
-                          </span>
-                        </div>
-                        <div className="target-display">
-                          <span className="target-label">
-                            Entry Target: {entryThreshold}% underperformance
-                          </span>
-                        </div>
-                        <div className={`signal-badge ${entrySignal ? 'signal-active' : 'signal-inactive'}`}>
-                          {entrySignal ? '🔔 ENTRY SIGNAL' : 'Not Yet'}
-                        </div>
-                      </>
-                    ) : (
-                      <>
-                        <div className="strategy-config">
-                          <div className="config-item">
-                            <span className="label">Stock:</span>
-                            <span className="value">{strategy.ticker}</span>
+                    const style = {
+                      transform: CSS.Transform.toString(transform),
+                      transition,
+                      opacity: isDragging ? 0.5 : 1,
+                    };
+
+                    return (
+                      <div
+                        ref={setNodeRef}
+                        style={style}
+                        className={`strategy-card ${!strategy.active ? 'inactive' : ''}`}
+                      >
+                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                          <button
+                            className="drag-handle"
+                            {...attributes}
+                            {...listeners}
+                          >
+                            ⋮⋮
+                          </button>
+                          <div
+                            style={{ flex: 1, cursor: 'pointer' }}
+                            onClick={() => navigate(`/strategy/${strategy.id}`)}
+                          >
+                            <div className="strategy-header">
+                              <h3>{strategy.name}</h3>
+                            </div>
+                            {strategy.notes && (
+                              <div className="strategy-notes">{strategy.notes}</div>
+                            )}
+                            <div className="strategy-body">
+                              {spread !== null ? (
+                                <>
+                                  <p className="prices-label">
+                                    ${priceData[strategy.ticker]?.toFixed(2) || '—'} vs {strategy.benchmark} ${priceData[strategy.benchmark]?.toFixed(2) || '—'}
+                                  </p>
+                                  <div className="spread-display">
+                                    <span className="spread-label">Current Spread:</span>
+                                    <span className={`spread-value ${spread <= 0 ? 'positive' : 'negative'}`}>
+                                      {spread >= 0 ? '+' : ''}{spread.toFixed(2)}%
+                                    </span>
+                                  </div>
+                                  <div className="target-display">
+                                    <span className="target-label">
+                                      Entry Target: {entryThreshold}% underperformance
+                                    </span>
+                                  </div>
+                                  <div className={`signal-badge ${entrySignal ? 'signal-active' : 'signal-inactive'}`}>
+                                    {entrySignal ? '🔔 ENTRY SIGNAL' : 'Not Yet'}
+                                  </div>
+                                </>
+                              ) : (
+                                <>
+                                  <div className="strategy-config">
+                                    <div className="config-item">
+                                      <span className="label">Stock:</span>
+                                      <span className="value">{strategy.ticker}</span>
+                                    </div>
+                                    <div className="config-item">
+                                      <span className="label">Benchmark:</span>
+                                      <span className="value">{strategy.benchmark}</span>
+                                    </div>
+                                    <div className="config-item">
+                                      <span className="label">Lookback:</span>
+                                      <span className="value">{strategy.lookback_days} days</span>
+                                    </div>
+                                    <div className="config-item">
+                                      <span className="label">Entry at:</span>
+                                      <span className="value">{entryThreshold}% underperformance</span>
+                                    </div>
+                                  </div>
+                                </>
+                              )}
+                            </div>
                           </div>
-                          <div className="config-item">
-                            <span className="label">Benchmark:</span>
-                            <span className="value">{strategy.benchmark}</span>
-                          </div>
-                          <div className="config-item">
-                            <span className="label">Lookback:</span>
-                            <span className="value">{strategy.lookback_days} days</span>
-                          </div>
-                          <div className="config-item">
-                            <span className="label">Entry at:</span>
-                            <span className="value">{entryThreshold}% underperformance</span>
-                          </div>
                         </div>
-                      </>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+                      </div>
+                    );
+                  };
+
+                  return <SortableCard key={strategy.id} />;
+                })}
+              </div>
+            </SortableContext>
+          </DndContext>
         </>
       )}
     </div>

@@ -2,6 +2,24 @@
 
 All notable changes to Rotation Tracker will be documented in this file.
 
+## [0.11.2] - 2026-04-20
+
+### Added
+- **Scanner Drag-and-Drop** - Completed drag-and-drop sorting for strategy cards
+  - Drag handle (⋮⋮) on each strategy card
+  - Reorder strategies by dragging
+  - Sort order persisted to database
+  - Falls back to urgency-based sorting (more negative spread = more urgent)
+  - Notes field displayed on strategy cards with responsive truncation
+
+### Changed
+- Scanner strategies now sorted by urgency (most urgent entry signals first)
+- Manual sort_order takes precedence when set
+
+### Notes
+- Completes the drag-and-drop feature started in v0.11.0
+- Both Dashboard and Scanner now support manual card reordering
+
 ## [0.11.1] - 2026-04-20
 
 ### Fixed

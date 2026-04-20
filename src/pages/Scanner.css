@@ -264,6 +264,56 @@
   background: var(--blue-700, #1d4ed8);
 }
 
+/* Drag handle */
+.drag-handle {
+  background: none;
+  border: none;
+  font-size: 1rem;
+  color: #9ca3af;
+  cursor: grab;
+  padding: 0.25rem;
+  line-height: 1;
+  touch-action: none;
+}
+
+.drag-handle:active {
+  cursor: grabbing;
+}
+
+.drag-handle:hover {
+  color: #6b7280;
+}
+
+/* Strategy notes */
+.strategy-notes {
+  font-size: 0.75rem;
+  color: #6b7280;
+  margin: 0.5rem 0;
+  font-style: italic;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Responsive truncation for notes */
+@media (max-width: 640px) {
+  .strategy-notes {
+    max-width: 15ch;
+  }
+}
+
+@media (min-width: 641px) and (max-width: 1024px) {
+  .strategy-notes {
+    max-width: 30ch;
+  }
+}
+
+@media (min-width: 1025px) {
+  .strategy-notes {
+    max-width: 50ch;
+  }
+}
+
 /* Mobile optimizations */
 @media (max-width: 640px) {
   .strategy-config {
