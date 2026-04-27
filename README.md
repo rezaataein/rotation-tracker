@@ -37,7 +37,7 @@ User configures strategy to monitor entry signals:
 ```
 Stock: NVDA
 Benchmark: VGT
-Lookback: 45 days
+Lookback: 45 trading days
 Entry Signal: -12% underperformance
 ```
 
@@ -137,8 +137,8 @@ App checks 3x daily (9am, 12pm, 3pm ET):
 **Completed Features:**
 - ✅ User authentication (email/password, signup/login)
 - ✅ Add positions with real-time ticker validation (Yahoo Finance)
-- ✅ Dashboard with position cards
-- ✅ Filter positions (All / Stock Rotation / Covered Calls)
+- ✅ Dashboard with position cards (drag-drop sorting, notes, urgency auto-sort)
+- ✅ Filter positions (All / Stock Rotation / Covered Calls / Active / Paused)
 - ✅ Bottom navigation (Scanner, Positions, Settings)
 - ✅ PWA support (installable, offline-ready)
 - ✅ Auto-deployment to GitHub Pages
@@ -151,10 +151,10 @@ App checks 3x daily (9am, 12pm, 3pm ET):
 - ✅ Consistent refresh pattern across all list views
 - ✅ Edit position/strategy functionality with chart refresh
 - ✅ Settings page (user profile, notifications toggle, logout, about)
-
-**In Development:**
-- 🔨 GitHub Actions cron job (price updates + signals)
-- 🔨 Web push notifications implementation
+- ✅ GitHub Actions cron job (3x daily price updates + signals)
+- ✅ Web push notifications (entry/swap/buyback signals)
+- ✅ Lookback period correctly uses trading days (matches backtesting engine)
+- ✅ Auto-sort reset button on Dashboard and Scanner
 
 ---
 
@@ -188,16 +188,15 @@ npm run build
 
 ## 🔢 **Versioning**
 
-This project uses **strict per-commit versioning**:
-- Every commit bumps the patch version (0.1.X → 0.1.Y)
+This project uses **semantic versioning**:
+- MINOR bump (X.Y.0) for new features
+- PATCH bump (X.Y.Z) for bug fixes
 - Version displayed in Settings → About section
-- Commit messages include version (e.g., "v0.1.5 - Fix bug")
+- Commit messages include version (e.g., "v1.1.0 - Add feature")
 
 **Why:** Easy debugging, deployment tracking, user verification
 
-Current version shown in Settings:
-- **Version:** 0.5.6
-- **Build Date:** 2026-04-15
+Current version: **1.1.0**
 
 ---
 
