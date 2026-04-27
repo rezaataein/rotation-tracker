@@ -277,6 +277,17 @@ export default function Dashboard({ user, refreshKey }) {
     fetchPrices(true); // Force refresh
   };
 
+  const handleResetSort = async () => {
+    const ids = positions.map(p => p.id);
+    setPositions(prev => prev.map(p => ({ ...p, sort_order: null })));
+    try {
+      await supabase.from('positions').update({ sort_order: null }).in('id', ids);
+    } catch (error) {
+      console.error('Error resetting sort order:', error);
+      fetchPositions();
+    }
+  };
+
   // Calculate current spread for stock rotation position
   const calculateSpread = (position) => {
     const stockPrice = priceData[position.ticker];
@@ -527,6 +538,14 @@ export default function Dashboard({ user, refreshKey }) {
               Covered Calls
             </button>
           </div>
+
+          {positions.some(p => p.sort_order !== null) && (
+            <div className="sort-reset-bar">
+              <button className="sort-reset-button" onClick={handleResetSort}>
+                ↺ Auto-sort
+              </button>
+            </div>
+          )}
 
           <DndContext
             sensors={sensors}

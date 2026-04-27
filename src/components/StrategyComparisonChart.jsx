@@ -1,11 +1,27 @@
 import { useEffect, useRef, useState } from 'react';
 import * as LightweightCharts from 'lightweight-charts';
 import { fetchMultipleHistoricalPrices } from '../lib/yahooFinance';
-import { getTodayString } from '../lib/dateUtils';
+import { getTodayString, tradingDaysToCalendarDays } from '../lib/dateUtils';
 import { calculateRelativePerformance } from '../lib/calculations';
 import { getCurrentPrice } from '../lib/priceUtils';
 import { createSmartTimeFormatter, createSmartTickFormatter } from '../lib/chartFormatters';
 import './Chart.css';
+
+// Trim raw Yahoo Finance result to the last n valid (non-null) trading days
+function sliceToLastNTradingDays(data, n) {
+  const pairs = [];
+  for (let i = 0; i < data.timestamps.length; i++) {
+    if (data.close[i] != null) {
+      pairs.push({ t: data.timestamps[i], c: data.close[i] });
+    }
+  }
+  const sliced = pairs.length > n ? pairs.slice(-n) : pairs;
+  return {
+    ...data,
+    timestamps: sliced.map(p => p.t),
+    close: sliced.map(p => p.c),
+  };
+}
 
 export default function StrategyComparisonChart({ strategy, onDataLoaded }) {
   const chartContainerRef = useRef(null);
@@ -32,9 +48,10 @@ export default function StrategyComparisonChart({ strategy, onDataLoaded }) {
 
       const today = getTodayString();
 
-      // Calculate start date based on lookback period
+      // lookback_days is TRADING days — fetch 2x calendar days as safe buffer
+      const calendarBuffer = tradingDaysToCalendarDays(strategy.lookback_days);
       const startDate = new Date();
-      startDate.setDate(startDate.getDate() - strategy.lookback_days);
+      startDate.setDate(startDate.getDate() - calendarBuffer);
       const startDateString = startDate.toISOString().split('T')[0];
 
       // Fetch both stock and benchmark data
@@ -44,21 +61,25 @@ export default function StrategyComparisonChart({ strategy, onDataLoaded }) {
         today
       );
 
-      const stockData = results.find(r => r.symbol === strategy.ticker);
-      const benchData = results.find(r => r.symbol === strategy.benchmark);
+      const rawStockData = results.find(r => r.symbol === strategy.ticker);
+      const rawBenchData = results.find(r => r.symbol === strategy.benchmark);
 
-      if (!stockData || !benchData) {
+      if (!rawStockData || !rawBenchData) {
         throw new Error('Failed to fetch price data');
       }
 
-      // Get current prices (includes extended hours)
-      const currentStockPrice = getCurrentPrice(stockData.meta);
-      const currentBenchPrice = getCurrentPrice(benchData.meta);
+      // Trim to exactly the last lookback_days trading days so chart and
+      // baseline both reflect the correct period (not the oversized calendar buffer)
+      const stockData = sliceToLastNTradingDays(rawStockData, strategy.lookback_days);
+      const benchData = sliceToLastNTradingDays(rawBenchData, strategy.lookback_days);
 
-      // Calculate current spread (relative performance)
+      // Get current prices from raw meta (includes extended hours)
+      const currentStockPrice = getCurrentPrice(rawStockData.meta);
+      const currentBenchPrice = getCurrentPrice(rawBenchData.meta);
+
+      // Calculate current spread using the correct lookback baseline (close[0] of trimmed data)
       let currentSpread = null;
       if (currentStockPrice && currentBenchPrice && stockData.close.length > 0 && benchData.close.length > 0) {
-        // Use first price as baseline for relative performance
         const stockStart = stockData.close[0];
         const benchStart = benchData.close[0];
 
@@ -76,7 +97,7 @@ export default function StrategyComparisonChart({ strategy, onDataLoaded }) {
         });
       }
 
-      // Render chart (data naturally includes extended hours from Yahoo)
+      // Render chart with trimmed data (shows exactly the lookback period)
       renderChart(stockData, benchData, strategy);
 
       setLoading(false);

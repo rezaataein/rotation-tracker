@@ -10,6 +10,7 @@ import {
   formatCacheTime
 } from '../lib/priceCache';
 import { getCurrentPrice } from '../lib/priceUtils';
+import { tradingDaysToCalendarDays } from '../lib/dateUtils';
 import {
   DndContext,
   closestCenter,
@@ -218,15 +219,15 @@ export default function Scanner({ user, refreshKey }) {
       // Fetch historical data for each lookback period (only what's not cached)
       for (const [lookback, tickers] of Object.entries(historicalToFetch)) {
         const tickerArray = Array.from(tickers);
+        const lookbackInt = parseInt(lookback);
+
+        // lookback_days is TRADING days — fetch 2x calendar days as a safe buffer
+        // (markets trade ~252/365 days, so 2x always covers the required trading days)
+        const calendarBuffer = tradingDaysToCalendarDays(lookbackInt);
         const historicalDate = new Date();
-        historicalDate.setDate(historicalDate.getDate() - parseInt(lookback));
+        historicalDate.setDate(historicalDate.getDate() - calendarBuffer);
         const startDate = historicalDate.toISOString().split('T')[0];
-
-        // Fetch a range to ensure we get data (markets might be closed on exact date)
-        const endDate = new Date(historicalDate);
-        endDate.setDate(endDate.getDate() + 5);
-        const endDateStr = endDate.toISOString().split('T')[0];
-
+        const endDateStr = new Date().toISOString().split('T')[0];
 
         const { data, error } = await supabase.functions.invoke('fetch-quotes', {
           body: {
@@ -243,20 +244,21 @@ export default function Scanner({ user, refreshKey }) {
           continue;
         }
 
-        // Extract the first valid price for each ticker
-        // Store as ticker_lookback to handle same ticker with different lookbacks
+        // Extract the price exactly lookbackInt TRADING days ago
+        // yfinance daily data only contains trading days, so index from the end
         const results = data.quoteResponse?.result || [];
         const cacheUpdates = {};
 
         results.forEach(result => {
-          if (result.close && result.close.length > 0 && result.timestamps && result.timestamps.length > 0) {
-            // Find the first non-null close price
-            const firstCloseIndex = result.close.findIndex(c => c != null);
-            if (firstCloseIndex !== -1) {
+          if (result.close && result.close.length > 0) {
+            const validCloses = result.close.filter(c => c != null);
+            if (validCloses.length >= lookbackInt) {
               const key = `${result.symbol}_${lookback}`;
-              const price = result.close[firstCloseIndex];
+              const price = validCloses[validCloses.length - lookbackInt];
               historicalPrices[key] = price;
               cacheUpdates[key] = { historicalPrice: price };
+            } else {
+              console.warn(`[SCANNER] Insufficient trading data for ${result.symbol}: got ${validCloses.length}, need ${lookbackInt}`);
             }
           }
         });
@@ -285,6 +287,17 @@ export default function Scanner({ user, refreshKey }) {
 
   const handleRefreshPrices = () => {
     fetchPrices(true); // Force refresh
+  };
+
+  const handleResetSort = async () => {
+    const ids = strategies.map(s => s.id);
+    setStrategies(prev => prev.map(s => ({ ...s, sort_order: null })));
+    try {
+      await supabase.from('strategies').update({ sort_order: null }).in('id', ids);
+    } catch (error) {
+      console.error('Error resetting sort order:', error);
+      fetchStrategies();
+    }
   };
 
   // Calculate current spread for strategy (over lookback period)
@@ -492,6 +505,14 @@ export default function Scanner({ user, refreshKey }) {
             </button>
           </div>
 
+          {strategies.some(s => s.sort_order !== null) && (
+            <div className="sort-reset-bar">
+              <button className="sort-reset-button" onClick={handleResetSort}>
+                ↺ Auto-sort
+              </button>
+            </div>
+          )}
+
           <DndContext
             sensors={sensors}
             collisionDetection={closestCenter}
@@ -582,7 +603,7 @@ export default function Scanner({ user, refreshKey }) {
                                     </div>
                                     <div className="config-item">
                                       <span className="label">Lookback:</span>
-                                      <span className="value">{strategy.lookback_days} days</span>
+                                      <span className="value">{strategy.lookback_days} trading days</span>
                                     </div>
                                     <div className="config-item">
                                       <span className="label">Entry at:</span>

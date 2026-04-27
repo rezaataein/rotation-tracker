@@ -123,7 +123,7 @@ export default function EditStrategy({ user, strategy, onClose, onSave }) {
           </div>
 
           <div className="form-group">
-            <label htmlFor="lookbackDays">Lookback Period (days) *</label>
+            <label htmlFor="lookbackDays">Lookback Period (trading days) *</label>
             <input
               id="lookbackDays"
               type="number"

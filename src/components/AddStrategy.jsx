@@ -193,7 +193,7 @@ export default function AddStrategy({ user, onClose, onSave }) {
           </div>
 
           <div className="form-group">
-            <label htmlFor="lookbackDays">Lookback Period (days) *</label>
+            <label htmlFor="lookbackDays">Lookback Period (trading days) *</label>
             <input
               id="lookbackDays"
               type="number"
@@ -213,6 +213,9 @@ export default function AddStrategy({ user, onClose, onSave }) {
             {fieldError.field === 'lookback' && (
               <div className="field-error">{fieldError.message}</div>
             )}
+            <div className="field-hint">
+              Market (trading) days only — e.g. 45 ≈ 9 calendar weeks. Matches the backtesting engine.
+            </div>
           </div>
 
           <div className="form-group">

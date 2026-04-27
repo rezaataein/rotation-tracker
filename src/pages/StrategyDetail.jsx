@@ -159,7 +159,7 @@ export default function StrategyDetail({ user }) {
         }
       >
         <section className="chart-section">
-          <h2>Relative Performance - Last {strategy.lookback_days} Days</h2>
+          <h2>Relative Performance - Last {strategy.lookback_days} Trading Days</h2>
           <StrategyComparisonChart strategy={strategy} onDataLoaded={handleChartDataLoaded} />
         </section>
 

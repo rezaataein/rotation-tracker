@@ -2,6 +2,20 @@
 
 All notable changes to Rotation Tracker will be documented in this file.
 
+## [1.1.0] - 2026-04-26
+
+### Added
+- **Auto-sort reset button** on Dashboard and Scanner — appears only when cards have a manual sort order pinned via drag-drop; clicking resets all cards back to urgency-based auto-sort
+
+### Fixed
+- **Critical: lookback_days now correctly means trading days everywhere**, matching the vgt-backtest engine
+  - Scanner: was using calendar days as baseline (e.g. 45d → wrong ~32 trading day window); now fetches 2x calendar buffer and takes the exact Nth trading day back
+  - StrategyComparisonChart: same fix — chart baseline and spread calculation now use correct trading day reference
+  - monitor.py (GitHub Actions): was fetching only `lookback + 10` calendar days (~53 trading days for lookback=75), causing "Insufficient historical data" for any strategy with lookback ≥ ~55; now uses `lookback * 2` calendar day buffer
+- **UI labels** updated to "trading days" in AddStrategy, EditStrategy, StrategyDetail, and Scanner cards; AddStrategy gets a hint note explaining the unit
+
+---
+
 ## [1.0.0] - 2026-04-20 🎉 MVP Release
 
 ### 🎯 Production Release

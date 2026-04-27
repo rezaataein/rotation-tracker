@@ -94,10 +94,16 @@ def fetch_current_price(ticker: str) -> Optional[float]:
 
 
 def fetch_historical_prices(ticker: str, lookback_days: int) -> Optional[Dict]:
-    """Fetch historical prices for relative performance calculation"""
+    """Fetch historical prices for relative performance calculation.
+
+    lookback_days is TRADING days (market days), matching the backtesting engine.
+    yfinance .history() returns only trading days, so iloc[-lookback_days] is exact.
+    We fetch 2x calendar days as a safe buffer (markets trade ~252/365 days).
+    """
     try:
         end_date = datetime.now()
-        start_date = end_date - timedelta(days=lookback_days + 10)  # Extra buffer
+        # 2x calendar days guarantees enough trading days for any lookback
+        start_date = end_date - timedelta(days=lookback_days * 2)
 
         t = yf.Ticker(ticker)
         hist = t.history(start=start_date, end=end_date)
@@ -106,10 +112,14 @@ def fetch_historical_prices(ticker: str, lookback_days: int) -> Optional[Dict]:
             print(f"⚠️  No historical data for {ticker}")
             return None
 
+        if len(hist) < lookback_days:
+            print(f"⚠️  Insufficient trading data for {ticker}: got {len(hist)} trading days, need {lookback_days}")
+            return None
+
         return {
             'prices': hist['Close'].to_dict(),
             'latest': float(hist['Close'].iloc[-1]),
-            'lookback': float(hist['Close'].iloc[-lookback_days]) if len(hist) >= lookback_days else None
+            'lookback': float(hist['Close'].iloc[-lookback_days])  # Exactly N trading days ago
         }
 
     except Exception as e:

@@ -80,3 +80,13 @@ export function getTodayString() {
   const now = new Date();
   return now.toISOString().split('T')[0];
 }
+
+/**
+ * Convert trading days to a safe calendar-day buffer for fetching historical data.
+ * Markets trade ~252 days/year (~0.69 of calendar days), so 2x is a safe upper bound.
+ * @param {number} tradingDays
+ * @returns {number} - Calendar days to fetch
+ */
+export function tradingDaysToCalendarDays(tradingDays) {
+  return Math.ceil(tradingDays * 2);
+}
