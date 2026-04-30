@@ -2,6 +2,16 @@
 
 All notable changes to Rotation Tracker will be documented in this file.
 
+## [1.1.1] - 2026-04-30
+
+### Fixed
+- **Extended hours prices now used everywhere** — pre-market and post-market prices now flow through for all Dashboard and Scanner calculations
+  - Edge function `fetchPrices` path: was explicitly setting `preMarketPrice`/`postMarketPrice` to `null` for all non-intraday intervals, discarding Yahoo's meta values; now initializes from `result.meta` so daily-interval fetches carry extended hours data
+  - Edge function `fetchOptions` path: quote object only forwarded `regularMarketPrice`; now also forwards `preMarketPrice`/`postMarketPrice` so covered call moneyness checks reflect extended hours stock price
+  - `getCurrentPrice` priority logic was already correct (post > pre > regular) — no frontend changes needed
+
+---
+
 ## [1.1.0] - 2026-04-26
 
 ### Added

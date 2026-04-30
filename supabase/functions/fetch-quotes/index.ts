@@ -138,6 +138,8 @@ Deno.serve(async (req) => {
               quote: {
                 symbol: quote.symbol,
                 regularMarketPrice: quote.regularMarketPrice,
+                preMarketPrice: quote.preMarketPrice ?? null,
+                postMarketPrice: quote.postMarketPrice ?? null,
                 currency: quote.currency,
                 exchangeName: quote.fullExchangeName || quote.exchangeName
               },
@@ -181,13 +183,13 @@ Deno.serve(async (req) => {
           const timestamps = result.timestamp || [];
           const closes = result.indicators?.quote?.[0]?.close || [];
 
-          // Start with Yahoo's meta values
+          // Start with Yahoo's meta values (including extended hours for all intervals)
           let regularMarketPrice = result.meta?.regularMarketPrice;
           let regularMarketTime = result.meta?.regularMarketTime;
-          let preMarketPrice = null;
-          let preMarketTime = null;
-          let postMarketPrice = null;
-          let postMarketTime = null;
+          let preMarketPrice = result.meta?.preMarketPrice ?? null;
+          let preMarketTime = result.meta?.preMarketTime ?? null;
+          let postMarketPrice = result.meta?.postMarketPrice ?? null;
+          let postMarketTime = result.meta?.postMarketTime ?? null;
 
           // If we have extended hours data, extract the last price and categorize it
           if (isIntraday && timestamps.length > 0 && closes.length > 0) {
